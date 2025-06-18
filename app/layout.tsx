@@ -8,9 +8,64 @@ import { TopNavigation } from "@/components/top-nav"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "RainInsight",
-  description: "Advanced rainfall monitoring and analytics platform",
-    generator: 'v0.dev'
+  title: "RainInsight - Water & Climate Lab",
+  description: "Advanced rainfall monitoring and analytics platform for Gujarat. Interactive maps, real-time data visualization, and comprehensive rainfall analysis tools.",
+  keywords: ["rainfall", "climate", "monitoring", "analytics", "Gujarat", "weather", "data visualization", "maps"],
+  authors: [{ name: "Water & Climate Lab" }],
+  creator: "Water & Climate Lab",
+  publisher: "Water & Climate Lab",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
+  metadataBase: new URL('https://your-domain.vercel.app'), // Replace with your actual domain
+  alternates: {
+    canonical: '/',
+  },
+  icons: {
+    icon: '/favicon.svg',
+    shortcut: '/favicon.svg',
+    apple: '/favicon.svg',
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'en_US',
+    url: 'https://your-domain.vercel.app', // Replace with your actual domain
+    title: 'RainInsight - Advanced Rainfall Analytics Platform',
+    description: 'Interactive rainfall monitoring and analytics platform for Gujarat. Explore real-time data, interactive maps, and comprehensive rainfall analysis tools.',
+    siteName: 'RainInsight',
+    images: [
+      {
+        url: '/og-image.svg', // Updated to use SVG
+        width: 1200,
+        height: 630,
+        alt: 'RainInsight - Rainfall Analytics Platform',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'RainInsight - Advanced Rainfall Analytics Platform',
+    description: 'Interactive rainfall monitoring and analytics platform for Gujarat. Explore real-time data, interactive maps, and comprehensive rainfall analysis tools.',
+    images: ['/og-image.svg'], // Updated to use SVG
+    creator: '@yourtwitterhandle', // Replace with your Twitter handle if you have one
+    site: '@yourtwitterhandle', // Replace with your Twitter handle if you have one
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  verification: {
+    google: 'your-google-verification-code', // Optional: Add if you have Google Search Console verification
+  },
 }
 
 export default function RootLayout({

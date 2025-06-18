@@ -126,9 +126,49 @@ const MapViewWithClick = React.memo<{
   getTehsilValue: (tehsil: string) => number | null
   getColor: (value: number) => string
   onTehsilClick: (tehsil: string) => void
-}>(({ geojson, getTehsilValue, getColor, onTehsilClick }) => {
+  selectedMetric: string
+  selectedDate: string
+}>(({ geojson, getTehsilValue, getColor, onTehsilClick, selectedMetric, selectedDate }) => {
   const { MapContainer, TileLayer, GeoJSON } = require("react-leaflet")
+  const layersRef = React.useRef<any[]>([])
   
+  // Get the appropriate label for the selected metric
+  const getMetricLabel = (metric: string) => {
+    switch (metric) {
+      case "rain_till_yesterday": return "Rain till Yesterday (mm)"
+      case "rain_last_24hrs": return "Rain Last 24hrs (mm)"
+      case "total_rainfall": return "Total Rainfall (mm)"
+      case "percent_against_avg": return "% Against Avg"
+      default: return "Value"
+    }
+  }
+  
+  // Format CSV filename to date label
+  function formatDateLabel(filename: string) {
+    return filename.replace(/\.csv$/, "").replace(/(\d+)(st|nd|rd|th)/, (m, d) => d.padStart(2, "0")).replace(" ", "/").replace("June", "06/2025")
+  }
+
+  // Update tooltips when date or metric changes
+  React.useEffect(() => {
+    const dateLabel = formatDateLabel(selectedDate)
+    const metricLabel = getMetricLabel(selectedMetric)
+    
+    layersRef.current.forEach(layer => {
+      const tehsil = layer.feature?.properties?.Tehsil_new
+      if (tehsil) {
+        const value = getTehsilValue(tehsil)
+        layer.setTooltipContent(
+          `<strong>${tehsil}</strong><br/>${dateLabel}<br/>${metricLabel}: ${value ?? "-"}`
+        )
+      }
+    })
+  }, [selectedDate, selectedMetric, getTehsilValue])
+
+  // Clear layers ref when geojson changes
+  React.useEffect(() => {
+    layersRef.current = []
+  }, [geojson])
+
   return (
     <MapContainer
       center={[22.5, 72.5]}
@@ -157,8 +197,14 @@ const MapViewWithClick = React.memo<{
         onEachFeature={(feature: any, layer: any) => {
           const tehsil = feature?.properties?.Tehsil_new
           const value = getTehsilValue(tehsil)
+          const metricLabel = getMetricLabel(selectedMetric)
+          const dateLabel = formatDateLabel(selectedDate)
+          
+          // Store layer reference for updating tooltips
+          layersRef.current.push(layer)
+          
           layer.bindTooltip(
-            `<strong>${tehsil}</strong><br/>${value ?? "-"}`,
+            `<strong>${tehsil}</strong><br/>${dateLabel}<br/>${metricLabel}: ${value ?? "-"}`,
             { sticky: true }
           )
           layer.on('click', () => {
@@ -203,7 +249,7 @@ const MapsPage: React.FC = () => {
         console.error('Error loading CSV data:', error)
         // You might want to show a user-friendly error message here
       })
-  }, [selectedDate])
+  }, [selectedDate]) // Only depend on selectedDate for map coloring
 
   // Load all CSVs for time series
   useEffect(() => {
@@ -239,7 +285,7 @@ const MapsPage: React.FC = () => {
         })
       })
       setAllCsvData(tehsilData)
-      // Default: find tehsil with max total_rainfall for latest date
+      // Default: find tehsil with max value for the selected metric on latest date
       if (!selectedTehsil && results.length) {
         const latest = results[results.length - 1]
         let maxTehsil = null, maxVal = -Infinity
@@ -253,7 +299,7 @@ const MapsPage: React.FC = () => {
         setSelectedTehsil(maxTehsil)
       }
     })
-  }, [selectedMetric])
+  }, [selectedMetric]) // Only depend on selectedMetric for time series
 
   // Load GeoJSON once
   useEffect(() => {
@@ -273,8 +319,13 @@ const MapsPage: React.FC = () => {
   function getTehsilValue(tehsil: string) {
     const row: CsvRow | undefined = csvData.find((r: CsvRow) => r.taluka?.toLowerCase() === tehsil?.toLowerCase())
     if (!row) return null
+    
+    // Get the value for the selected metric
     const val = row[selectedMetric]
-    return isNaN(Number(val)) ? null : Number(val)
+    if (val === undefined || val === null || val === '') return null
+    
+    const numVal = Number(val)
+    return isNaN(numVal) ? null : numVal
   }
 
   // Format CSV filename to date label
@@ -345,13 +396,25 @@ const MapsPage: React.FC = () => {
         <div className="flex w-full h-[calc(100vh-260px)]">
           <div className="flex-1 relative border rounded bg-white dark:bg-slate-900">
             {geojson ? (
-              <MapViewWithClick geojson={geojson} getTehsilValue={getTehsilValue} getColor={getColor} onTehsilClick={setSelectedTehsil} />
+              <MapViewWithClick 
+                geojson={geojson} 
+                getTehsilValue={getTehsilValue} 
+                getColor={getColor} 
+                onTehsilClick={setSelectedTehsil} 
+                selectedMetric={selectedMetric} 
+                selectedDate={selectedDate} 
+              />
             ) : (
               <div className="absolute inset-0 flex items-center justify-center">Loading map...</div>
             )}
             {/* Legend */}
             <div className="absolute bottom-4 right-4 bg-background/90 backdrop-blur-sm border rounded-lg p-4 z-[1000]">
-              <h4 className="font-medium mb-2">Rainfall (mm)</h4>
+              <h4 className="font-medium mb-2">
+                {selectedMetric === "percent_against_avg" ? "% Against Avg" : 
+                 selectedMetric === "rain_till_yesterday" ? "Rain till Yesterday (mm)" :
+                 selectedMetric === "rain_last_24hrs" ? "Rain Last 24hrs (mm)" :
+                 "Total Rainfall (mm)"}
+              </h4>
               <div className="space-y-1 text-xs">
                 {colorBins.map((bin, i) => (
                   <div key={i} className="flex items-center gap-2">

@@ -184,7 +184,10 @@ const MapsPage: React.FC = () => {
   useEffect(() => {
     if (!selectedDate) return
     fetch(`/${selectedDate}`)
-      .then(res => res.text())
+      .then(res => {
+        if (!res.ok) throw new Error(`Failed to load ${selectedDate}`)
+        return res.text()
+      })
       .then(text => {
         const rows = text.split("\n").filter(Boolean)
         const headers = rows[0].split(",")
@@ -196,13 +199,20 @@ const MapsPage: React.FC = () => {
         })
         setCsvData(data)
       })
+      .catch(error => {
+        console.error('Error loading CSV data:', error)
+        // You might want to show a user-friendly error message here
+      })
   }, [selectedDate])
 
   // Load all CSVs for time series
   useEffect(() => {
     Promise.all(csvFilesList.map(filename =>
       fetch(`/${filename}`)
-        .then(res => res.text())
+        .then(res => {
+          if (!res.ok) throw new Error(`Failed to load ${filename}`)
+          return res.text()
+        })
         .then(text => {
           const rows = text.split("\n").filter(Boolean)
           const headers = rows[0].split(",")
@@ -213,6 +223,10 @@ const MapsPage: React.FC = () => {
             return obj
           })
           return { filename, data }
+        })
+        .catch(error => {
+          console.error(`Error loading ${filename}:`, error)
+          return { filename, data: [] }
         })
     )).then(results => {
       const tehsilData: { [tehsil: string]: { [date: string]: number } } = {}
@@ -244,8 +258,15 @@ const MapsPage: React.FC = () => {
   // Load GeoJSON once
   useEffect(() => {
     fetch("/gujarat_tehsil.geojson")
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to load GeoJSON data')
+        return res.json()
+      })
       .then(setGeojson)
+      .catch(error => {
+        console.error('Error loading GeoJSON:', error)
+        // You might want to show a user-friendly error message here
+      })
   }, [])
 
   // Helper: get value for a tehsil

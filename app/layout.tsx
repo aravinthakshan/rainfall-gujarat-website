@@ -19,7 +19,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL('https://your-domain.vercel.app'), // Replace with your actual domain
+  metadataBase: new URL('https://rainfall-gujarat-website.vercel.app'), // Replace with your actual domain
   alternates: {
     canonical: '/',
   },
@@ -31,7 +31,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: 'website',
     locale: 'en_US',
-    url: 'https://your-domain.vercel.app', // Replace with your actual domain
+    url: 'https://rainfall-gujarat-website.vercel.app', // Replace with your actual domain
     title: 'RainInsight - Advanced Rainfall Analytics Platform',
     description: 'Interactive rainfall monitoring and analytics platform for Gujarat. Explore real-time data, interactive maps, and comprehensive rainfall analysis tools.',
     siteName: 'RainInsight',

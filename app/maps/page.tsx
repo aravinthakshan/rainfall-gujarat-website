@@ -392,9 +392,9 @@ const MapsPage: React.FC = () => {
             ))}
           </select>
         </div>
-        {/* Map and Time Series Side by Side (desktop), stacked (mobile) */}
-        <div className="flex flex-col md:flex-row w-full h-auto md:h-[calc(100vh-260px)] gap-4">
-          <div className="w-full md:flex-1 relative border rounded bg-white dark:bg-slate-900 h-[60vh] md:h-auto mb-4 md:mb-0">
+        {/* Map and Time Series Side by Side */}
+        <div className="flex w-full h-[calc(100vh-260px)]">
+          <div className="flex-1 relative border rounded bg-white dark:bg-slate-900">
             {geojson ? (
               <MapViewWithClick 
                 geojson={geojson} 
@@ -425,7 +425,7 @@ const MapsPage: React.FC = () => {
               </div>
             </div>
           </div>
-          <div className="w-full md:flex-1 flex items-center justify-center p-0 md:p-4">
+          <div className="flex-1 flex items-center justify-center p-4">
             <TimeSeriesPlot tehsil={selectedTehsil} data={allCsvData} metric={selectedMetric} />
           </div>
         </div>

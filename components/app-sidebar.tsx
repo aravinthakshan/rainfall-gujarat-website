@@ -54,22 +54,6 @@ export function AppSidebar() {
                 </SidebarMenuButton>
               </SidebarMenuItem>
               <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={isActive("/analytics")}>
-                  <Link href="/analytics">
-                    <BarChart3 className="h-4 w-4" />
-                    <span>Analytics</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild isActive={isActive("/data-export")}>
-                  <Link href="/data-export">
-                    <Database className="h-4 w-4" />
-                    <span>Data Export</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-              <SidebarMenuItem>
                 <SidebarMenuButton asChild isActive={isActive("/help")}>
                   <Link href="/help">
                     <HelpCircle className="h-4 w-4" />

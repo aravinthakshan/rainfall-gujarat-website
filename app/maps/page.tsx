@@ -393,7 +393,7 @@ const MapsPage: React.FC = () => {
           </select>
         </div>
         {/* Map and Time Series Side by Side (desktop), stacked (mobile) */}
-        <div className="flex flex-col md:flex-row w-full h-auto md:h-[calc(100vh-260px)] gap-4">
+        <div className="flex flex-col md:flex-row w-full h-auto md:h-[calc(100vh-260px)] gap-0 md:gap-0">
           <div className="w-full md:flex-1 relative border rounded bg-white dark:bg-slate-900 h-[60vh] md:h-auto mb-4 md:mb-0">
             {geojson ? (
               <MapViewWithClick 

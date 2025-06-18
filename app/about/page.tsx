@@ -1,5 +1,4 @@
 import { Card, CardContent } from "@/components/ui/card"
-import { DashboardHeader } from "@/components/dashboard-header"
 import { Button } from "@/components/ui/button"
 import { Linkedin, BookOpen, Github, Mail } from "lucide-react"
 import Image from "next/image"
@@ -51,7 +50,6 @@ const teamMembers = [
   export default function AboutPage() {
     return (
       <div className="flex flex-col min-h-screen">
-        <DashboardHeader />
         <div className="flex-1 p-4 md:p-8 pt-6">
           <div className="max-w-7xl mx-auto space-y-8">
             {/* Header Section */}

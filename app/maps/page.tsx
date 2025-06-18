@@ -1,7 +1,6 @@
 "use client"
 
 import React, { useEffect, useState } from "react"
-import { DashboardHeader } from "@/components/dashboard-header"
 import { Button } from "@/components/ui/button"
 import { MapPin } from "lucide-react"
 import dynamic from "next/dynamic"
@@ -292,7 +291,6 @@ const MapsPage: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen">
-      <DashboardHeader />
       <div className="flex-1 p-4 md:p-8 pt-6">
         <div className="mb-6">
           <h2 className="text-3xl font-bold tracking-tight">Rainfall Map</h2>

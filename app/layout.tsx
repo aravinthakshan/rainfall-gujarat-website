@@ -22,11 +22,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <SidebarProvider>
-            <div className="flex min-h-screen">
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>          <SidebarProvider>
+            <div className="flex min-h-screen w-full">
               <AppSidebar />
-              <main className="flex-1">{children}</main>
+              <main className="flex-1 w-full">{children}</main>
             </div>
           </SidebarProvider>
         </ThemeProvider>

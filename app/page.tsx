@@ -1,11 +1,89 @@
+"use client"
+import React, { useEffect, useState } from "react"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { RainfallChart } from "@/components/rainfall-chart"
 import { RegionalTable } from "@/components/regional-table"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { Cloud, Droplets, TrendingUp, AlertTriangle } from "lucide-react"
+import { ResponsiveContainer, BarChart as RechartsBarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from "recharts"
+
+const csvFilesList = [
+  "13th June.csv",
+  "14th June.csv",
+  "15th June.csv",
+  "16th June.csv",
+  "17th June.csv",
+]
+
+const REGION_LABELS = [
+  { key: "KUTCHH", match: ["Kachchh", "Kutchh", "Kutch"] },
+  { key: "NORTH GUJARAT", match: ["North Gujarat"] },
+  { key: "EAST CENTRAL", match: ["East Central Gujarat", "East-CENTRAL GUJARAT"] },
+  { key: "SAURASHTRA", match: ["Saurashtra"] },
+  { key: "SOUTH GUJARAT", match: ["South Gujarat"] },
+]
+
+function parseCSV(text: string): any[] {
+  const rows = text.split("\n").filter(Boolean)
+  const headers = rows[0].split(",")
+  return rows.slice(1).map((row: string) => {
+    const values = row.split(",")
+    const obj: Record<string, string> = {}
+    headers.forEach((h: string, i: number) => (obj[h.trim()] = values[i]?.trim()))
+    return obj
+  })
+}
+
+function aggregateRainfallByRegion(data: any[]): { region: string; rainfall: number; percent: number }[] {
+  // For each region, sum total_rainfall and percent_against_avg
+  return REGION_LABELS.map(region => {
+    const regionRows = data.filter((row: any) => region.match.some((m: string) => row.region?.toLowerCase().includes(m.toLowerCase())))
+    // Only use rows with numeric total_rainfall and percent_against_avg
+    const totalRainfall = regionRows.reduce((sum: number, row: any) => sum + (parseFloat(row.total_rainfall) || 0), 0)
+    const percentAgainstAvg = regionRows.reduce((sum: number, row: any) => sum + (parseFloat(row.percent_against_avg) || 0), 0)
+    return {
+      region: region.key,
+      rainfall: Number(totalRainfall.toFixed(2)),
+      percent: Number(percentAgainstAvg.toFixed(2)),
+    }
+  })
+}
+
+function RainfallReportChart({ data }: { data: { region: string; rainfall: number; percent: number }[] }) {
+  const COLORS = ["#2563eb", "#f87171"] // blue, red
+  return (
+    <div className="h-[340px] w-full">
+      <ResponsiveContainer width="100%" height="100%">
+        <RechartsBarChart data={data} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis dataKey="region" axisLine={false} tickLine={false} tick={{ fontSize: 14, fontWeight: 600 }} />
+          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12 }} />
+          <Tooltip formatter={(value, name) => name === "rainfall" ? [`${value} mm`, "Total Avg. Rainfall"] : [`${value}`, "% Against Avrg Rain"]} />
+          <Legend formatter={v => v === "rainfall" ? <span style={{color:COLORS[0]}}>Total Avg. Rainfall (m.m)</span> : <span style={{color:COLORS[1]}}>% Against Avrg Rain</span>} />
+          <Bar dataKey="rainfall" fill={COLORS[0]} radius={[4, 4, 0, 0]} />
+          <Bar dataKey="percent" fill={COLORS[1]} radius={[4, 4, 0, 0]} />
+        </RechartsBarChart>
+      </ResponsiveContainer>
+    </div>
+  )
+}
 
 export default function Dashboard() {
+  const [selectedDate, setSelectedDate] = useState<string>(csvFilesList[0])
+  const [csvData, setCsvData] = useState<any[]>([])
+  const [rainfallData, setRainfallData] = useState<{ region: string; rainfall: number; percent: number }[]>([])
+
+  useEffect(() => {
+    fetch(`/${selectedDate}`)
+      .then(res => res.text())
+      .then(text => {
+        const data = parseCSV(text)
+        setCsvData(data)
+        setRainfallData(aggregateRainfallByRegion(data))
+      })
+  }, [selectedDate])
+
   return (
     <div className="flex flex-col w-full">
       <DashboardHeader />
@@ -65,11 +143,22 @@ export default function Dashboard() {
             <div className="grid gap-4 md:grid-cols-2 w-full">
               <Card>
                 <CardHeader>
-                  <CardTitle>Rainfall Volume</CardTitle>
-                  <CardDescription>Daily rainfall volume over the past 30 days</CardDescription>
+                  <CardTitle>Rainfall Report</CardTitle>
+                  <CardDescription>Region-wise rainfall and % against average (select date)</CardDescription>
                 </CardHeader>
                 <CardContent className="pl-2">
-                  <RainfallChart />
+                  <div className="flex items-center gap-2 mb-2">
+                    <select
+                      className="border rounded px-2 py-1 text-sm"
+                      value={selectedDate}
+                      onChange={e => setSelectedDate(e.target.value)}
+                    >
+                      {csvFilesList.map(f => (
+                        <option key={f} value={f}>{f.replace(/\.csv$/, "")}</option>
+                      ))}
+                    </select>
+                  </div>
+                  <RainfallReportChart data={rainfallData} />
                 </CardContent>
               </Card>
               <Card>

@@ -37,7 +37,7 @@ export const metadata: Metadata = {
     siteName: 'RainInsight',
     images: [
       {
-        url: '/og-image.svg', // Updated to use SVG
+        url: '/preview.png', // Updated to use PNG preview image
         width: 1200,
         height: 630,
         alt: 'RainInsight - Rainfall Analytics Platform',
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'RainInsight - Advanced Rainfall Analytics Platform',
     description: 'Interactive rainfall monitoring and analytics platform for Gujarat. Explore real-time data, interactive maps, and comprehensive rainfall analysis tools.',
-    images: ['/og-image.svg'], // Updated to use SVG
+    images: ['/preview.png'], // Updated to use PNG preview image
     creator: '@yourtwitterhandle', // Replace with your Twitter handle if you have one
     site: '@yourtwitterhandle', // Replace with your Twitter handle if you have one
   },

@@ -39,7 +39,7 @@ const teamMembers = [
       name: "Sayuj Gupta",
       title: "B.Tech Student",
       description: "Research interests and academic focus areas in hydrology and environmental engineering.",
-      image: "/placeholder.svg?height=200&width=200",
+      image: "/sayuj.png",
       linkedin: "#",
       scholar: "#",
       github: "#",

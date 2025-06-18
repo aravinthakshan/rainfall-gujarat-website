@@ -53,7 +53,7 @@ const teamMembers = [
       <div className="flex flex-col min-h-screen">
         <DashboardHeader />
         <div className="flex-1 p-4 md:p-8 pt-6">
-          <div className="max-w-6xl mx-auto space-y-8">
+          <div className="max-w-7xl mx-auto space-y-8">
             {/* Header Section */}
 
               {/* Lab Description */}
@@ -72,6 +72,11 @@ const teamMembers = [
                     solutions for water management, climate resilience, and sustainable development in the face of
                     changing environmental conditions.
                   </p>
+                  <div className="flex justify-center pt-2">
+                    <Button asChild size="lg" className="text-base font-semibold px-8 py-2">
+                      <a href="/maps">Explore Maps</a>
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>

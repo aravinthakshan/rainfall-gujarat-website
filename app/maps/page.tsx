@@ -120,9 +120,61 @@ const MapView: React.FC<{
   )
 }
 
+// --- MapView with click handler ---
+const MapViewWithClick = React.memo<{
+  geojson: GeoJson
+  getTehsilValue: (tehsil: string) => number | null
+  getColor: (value: number) => string
+  onTehsilClick: (tehsil: string) => void
+}>(({ geojson, getTehsilValue, getColor, onTehsilClick }) => {
+  const { MapContainer, TileLayer, GeoJSON } = require("react-leaflet")
+  
+  return (
+    <MapContainer
+      center={[22.5, 72.5]}
+      zoom={7}
+      scrollWheelZoom={true}
+      style={{ height: "100%", width: "100%", borderRadius: 8 }}
+      attributionControl={false}
+    >
+      <TileLayer
+        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+        attribution="&copy; OpenStreetMap contributors"
+      />
+      <GeoJSON
+        data={geojson as any}
+        style={(feature: any) => {
+          const tehsil = feature?.properties?.Tehsil_new
+          const value = getTehsilValue(tehsil)
+          const color = value == null ? "#eee" : getColor(value)
+          return {
+            fillColor: color,
+            color: "#333",
+            weight: 1,
+            fillOpacity: 0.85,
+          }
+        }}
+        onEachFeature={(feature: any, layer: any) => {
+          const tehsil = feature?.properties?.Tehsil_new
+          const value = getTehsilValue(tehsil)
+          layer.bindTooltip(
+            `<strong>${tehsil}</strong><br/>${value ?? "-"}`,
+            { sticky: true }
+          )
+          layer.on('click', () => {
+            if (tehsil) onTehsilClick(tehsil.toLowerCase())
+          })
+        }}
+      />
+    </MapContainer>
+  )
+})
+
+MapViewWithClick.displayName = 'MapViewWithClick'
+
 const MapsPage: React.FC = () => {
-  const [selectedDate, setSelectedDate] = useState<string>(csvFilesList[0])
-  const [selectedMetric, setSelectedMetric] = useState<string>(metricOptions[0].value)
+  const [selectedDate, setSelectedDate] = useState<string>("16th June.csv")
+  const [selectedMetric, setSelectedMetric] = useState<string>("total_rainfall")
   const [csvData, setCsvData] = useState<CsvRow[]>([])
   const [geojson, setGeojson] = useState<GeoJson | null>(null)
   const [allCsvData, setAllCsvData] = useState<{ [tehsil: string]: { [date: string]: number } }>({})
@@ -237,55 +289,6 @@ const MapsPage: React.FC = () => {
           </LineChart>
         </ResponsiveContainer>
       </div>
-    )
-  }
-
-  // --- MapView with click handler ---
-  const MapViewWithClick: React.FC<{
-    geojson: GeoJson
-    getTehsilValue: (tehsil: string) => number | null
-    getColor: (value: number) => string
-    onTehsilClick: (tehsil: string) => void
-  }> = ({ geojson, getTehsilValue, getColor, onTehsilClick }) => {
-    const { MapContainer, TileLayer, GeoJSON } = require("react-leaflet")
-    return (
-      <MapContainer
-        center={[22.5, 72.5]}
-        zoom={7}
-        scrollWheelZoom={true}
-        style={{ height: "100%", width: "100%", borderRadius: 8 }}
-        attributionControl={false}
-      >
-        <TileLayer
-          url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-          attribution="&copy; OpenStreetMap contributors"
-        />
-        <GeoJSON
-          data={geojson as any}
-          style={(feature: any) => {
-            const tehsil = feature?.properties?.Tehsil_new
-            const value = getTehsilValue(tehsil)
-            const color = value == null ? "#eee" : getColor(value)
-            return {
-              fillColor: color,
-              color: "#333",
-              weight: 1,
-              fillOpacity: 0.85,
-            }
-          }}
-          onEachFeature={(feature: any, layer: any) => {
-            const tehsil = feature?.properties?.Tehsil_new
-            const value = getTehsilValue(tehsil)
-            layer.bindTooltip(
-              `<strong>${tehsil}</strong><br/>${value ?? "-"}`,
-              { sticky: true }
-            )
-            layer.on('click', () => {
-              if (tehsil) onTehsilClick(tehsil.toLowerCase())
-            })
-          }}
-        />
-      </MapContainer>
     )
   }
 

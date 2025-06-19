@@ -8,7 +8,7 @@ const teamMembers = [
       name: "Prof. Vimal Mishra",
       title: "Professor, Civil Engineering, IIT Gandhinagar",
       description:
-        "Surface Water Hydrology, Climate Variability and Climate Change, Global Food and Water Security, Water Resources Management, Large Scale Hydrologic Modeling",
+        "Advisor",
       image: "/Vimal Mishra.a1d42ea96aa0546a5fd5.jpg",
       linkedin: "#",
       scholar: "#",
@@ -20,29 +20,26 @@ const teamMembers = [
       title: "PhD Research Scholar",
       description: "Machine Learning, Deep Learning, Hydroclimatic extremes, Remote Sensing, Paleoclimate",
       image:"/Hiren Solanki.6de65781a4ed43991632.jpg",
-      linkedin: "#",
+      linkedin: "https://www.linkedin.com/in/hiren-solanki-831286135 ",
       scholar: "#",
       github: "#",
       email: "hiren.solanki@iitgn.ac.in",
     },
     {
       name: "Aravinthakshan",
-      title: "B.Tech Student",
-      description: "Research interests and academic focus areas in water resources and climate studies.",
+      title: "B.Tech CSE Student, Manipal Institute of Technology",
+      description: "AI Researcher, Software and Machine Learning Engineer",
       image: "/aravinthakshan.jpg",
-      linkedin: "#",
-      scholar: "#",
-      github: "#",
-      email: "aravinthakshan@iitgn.ac.in",
+      linkedin: "https://www.linkedin.com/in/aravinthakshan/",
+      github: "github.com/aravinthakshan/",
+      email: "aravinthakshanmain@gmail.com",
     },
     {
       name: "Sayuj Gupta",
-      title: "B.Tech Student",
-      description: "Research interests and academic focus areas in hydrology and environmental engineering.",
+      title: "B.Tech CSE Student, IIT Jammu",
+      description: "AI Researcher, Software and Machine Learning Engineer",
       image: "/sayuj.png",
-      linkedin: "#",
-      scholar: "#",
-      github: "#",
+      linkedin: "https://www.linkedin.com/in/sayuj-gupta-14a4b42b9 ",
       email: "sayuj.gupta@iitgn.ac.in",
     },
   ]
@@ -51,7 +48,7 @@ const teamMembers = [
     return (
       <div className="flex flex-col min-h-screen">
         <div className="flex-1 p-4 md:p-8 pt-6">
-          <div className="max-w-7xl mx-auto space-y-8">
+          <div className="max-w-8xl mx-auto space-y-8">
             {/* Header Section */}
 
               {/* Lab Description */}
@@ -91,7 +88,7 @@ const teamMembers = [
                     <CardContent className="p-4">
                       <div className="flex flex-col items-center text-center gap-2">
                         {/* Profile Image */}
-                        <div className="w-20 h-20 rounded-full overflow-hidden bg-muted">
+                        <div className="w-40 h-40 rounded-full overflow-hidden bg-muted">
                           <Image
                             src={member.image || "/placeholder.svg"}
                             alt={member.name}
@@ -102,13 +99,12 @@ const teamMembers = [
                         </div>
                         {/* Name and Title */}
                         <div className="space-y-0.5">
-                          <h3 className="text-base font-semibold">{member.name}</h3>
-                          <p className="text-xs font-medium text-primary">{member.title}</p>
+                          <h3 className="text-xl font-semibold">{member.name}</h3>
+                          <p className="text-l font-medium text-primary">{member.title}</p>
                         </div>
                         {/* Research Interests */}
                         <div className="space-y-0.5">
-                          <h4 className="text-xs font-medium text-muted-foreground">Research Interests:</h4>
-                          <p className="text-xs text-muted-foreground leading-snug">{member.description}</p>
+                          <p className="text-s text-muted-foreground leading-snug">{member.description}</p>
                         </div>
                         {/* Social Links */}
                         <div className="flex gap-1 pt-1">

@@ -6,6 +6,7 @@ import { MapPin } from "lucide-react"
 import dynamic from "next/dynamic"
 import "leaflet/dist/leaflet.css"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { useIsMobile } from "@/hooks/use-mobile"
 
 // Color bins and thresholds as per reference image
 const colorBins = [
@@ -36,29 +37,6 @@ function getColor(value: number) {
   }
   return colorBins[colorBins.length - 1].color
 }
-
-// Hardcoded CSV file list (since we can't list files in public from client-side)
-const csvFilesList = [
-  "1st June.csv",
-  "2nd June.csv",
-  "3rd June.csv",
-  "4th June.csv",
-  // "5th June.csv",
-  "6th June.csv",
-  "7th June.csv",
-  "8th June.csv",
-  "9th June.csv",
-  "10th June.csv",
-  "11th June.csv",
-  "12th June.csv",
-  "13th June.csv",
-  "14th June.csv",
-  "15th June.csv",
-  "16th June.csv",
-  "17th June.csv",
-];
-
-
 
 type CsvRow = Record<string, string>
 
@@ -233,12 +211,27 @@ const MapViewWithClick = React.memo<{
 MapViewWithClick.displayName = 'MapViewWithClick'
 
 const MapsPage: React.FC = () => {
-  const [selectedDate, setSelectedDate] = useState<string>("16th June.csv")
+  const [csvFilesList, setCsvFilesList] = useState<string[]>([])
+  const [selectedDate, setSelectedDate] = useState<string>("")
   const [selectedMetric, setSelectedMetric] = useState<string>("total_rainfall")
   const [csvData, setCsvData] = useState<CsvRow[]>([])
   const [geojson, setGeojson] = useState<GeoJson | null>(null)
   const [allCsvData, setAllCsvData] = useState<{ [tehsil: string]: { [date: string]: number } }>({})
   const [selectedTehsil, setSelectedTehsil] = useState<string | null>(null)
+  const isMobile = useIsMobile()
+
+  // Fetch CSV file list from API on mount
+  useEffect(() => {
+    fetch("/api/csv-files")
+      .then(res => res.json())
+      .then(data => {
+        setCsvFilesList(data.files)
+        // Set default date to the latest file if not already set
+        if (!selectedDate && data.files.length > 0) {
+          setSelectedDate(data.files[data.files.length - 1])
+        }
+      })
+  }, [])
 
   // Load CSV data for selected date (for map coloring)
   useEffect(() => {

@@ -88,7 +88,7 @@ const teamMembers = [
                     <CardContent className="p-4">
                       <div className="flex flex-col items-center text-center gap-2">
                         {/* Profile Image */}
-                        <div className="w-35 h-35 rounded-full overflow-hidden bg-muted">
+                        <div className="w-30 h-30 rounded-full overflow-hidden bg-muted">
                           <Image
                             src={member.image || "/placeholder.svg"}
                             alt={member.name}

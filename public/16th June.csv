@@ -13,6 +13,7 @@ East-CENTRAL GUJARAT,Ahmedabad,9.0,Sanand,772.0,0.0,39.0,39.0,5.0
 East-CENTRAL GUJARAT,Ahmedabad,10.0,Viramgam,599.0,57.0,17.0,74.0,12.3
 East-CENTRAL GUJARAT,Ahmedabad,,Ahmedabad District Avg,668.0,36.1,27.6,63.7,9.5
 East-CENTRAL GUJARAT,Anand,1.0,Anand,889.0,125.0,21.0,146.0,16.4
+East-CENTRAL GUJARAT,Anand,2.0,Anklav,833.0,24.0,14.0,38.0,4.5
 East-CENTRAL GUJARAT,Anand,3.0,Borsad,855.0,11.0,35.0,46.0,5.3
 East-CENTRAL GUJARAT,Anand,4.0,Khambhat,801.0,170.0,22.0,192.0,23.9
 East-CENTRAL GUJARAT,Anand,5.0,Petlad,818.0,127.0,25.0,152.0,18.5
@@ -20,7 +21,6 @@ East-CENTRAL GUJARAT,Anand,6.0,Sojitra,735.0,130.0,21.0,151.0,20.5
 East-CENTRAL GUJARAT,Anand,7.0,Tarapur,697.0,153.0,12.0,165.0,23.6
 East-CENTRAL GUJARAT,Anand,8.0,Umreth,644.0,6.0,12.0,18.0,2.8
 East-CENTRAL GUJARAT,Anand,,Anand District Avg,784.0,93.25,20.3,113.5,14.4
-East-CENTRAL GUJARAT,Bharuch,2.0,Ankleshwar,833.0,24.0,14.0,38.0,4.5
 East-CENTRAL GUJARAT,Chhota Udepur,1.0,Bodeli,1201.0,40.0,54.0,94.0,7.83
 East-CENTRAL GUJARAT,Chhota Udepur,2.0,Chhota Udepur,1001.0,3.0,15.0,18.0,1.8
 East-CENTRAL GUJARAT,Chhota Udepur,3.0,Jetpur Pavi,1048.0,15.0,13.0,28.0,2.67
@@ -90,6 +90,11 @@ North Gujarat,Aravalli,,Dhansura,918.0,21.0,2.0,23.0,2.51
 North Gujarat,Aravalli,,Malpur,777.0,18.0,12.0,30.0,3.86
 North Gujarat,Aravalli,,Meghraj,882.0,31.0,8.0,39.0,4.42
 North Gujarat,Aravalli,,Modasa,893.0,23.0,35.0,58.0,6.49
+North Gujarat,Banaskantha,1.0,Amirgadh,801.0,2.0,49.0,51.0,6.37
+North Gujarat,Banaskantha,2.0,Bhabhar,531.0,17.0,0.0,17.0,3.2
+North Gujarat,Banaskantha,3.0,Danta,891.0,2.0,11.0,13.0,1.46
+North Gujarat,Banaskantha,4.0,Dantiwada,652.0,5.0,8.0,13.0,1.99
+North Gujarat,Banaskantha,5.0,Deesa,679.0,4.0,12.0,16.0,2.36
 North Gujarat,Banaskantha,6.0,Deodar,563.0,21.0,0.0,21.0,3.73
 North Gujarat,Banaskantha,7.0,Dhanera,597.0,24.0,0.0,24.0,4.02
 North Gujarat,Banaskantha,8.0,Kankrej,492.0,11.0,1.0,12.0,2.44
@@ -101,6 +106,7 @@ North Gujarat,Banaskantha,13.0,Vadgam,772.0,28.0,5.0,33.0,4.27
 North Gujarat,Banaskantha,14.0,Vav,499.0,30.0,0.0,30.0,6.01
 North Gujarat,Banaskantha,,Banaskantha District Avg,631.0,19.93,6.86,26.79,4.25
 North Gujarat,Gandhinagar,,Dehgam,810.0,45.0,15.0,60.0,7.41
+North Gujarat,Gandhinagar,,Gandhinagar,695.0,11.0,2.0,13.0,1.87
 North Gujarat,Gandhinagar,,Gandhinagar District Avg,768.0,21.3,10.3,31.5,4.1
 North Gujarat,Gandhinagar,,Kalol(Gandhinagar),774.0,7.0,2.0,9.0,1.16
 North Gujarat,Gandhinagar,,Mansa,792.0,22.0,22.0,44.0,5.56
@@ -116,15 +122,10 @@ North Gujarat,Mahesana,,Vadnagar,599.0,5.0,2.0,7.0,1.17
 North Gujarat,Mahesana,,Vijapur,817.0,1.0,16.0,17.0,2.08
 North Gujarat,Mahesana,,Visnagar,656.0,3.0,19.0,22.0,3.35
 North Gujarat,North Gujarat Region,,North Gujarat Region Avg,719.0,20.0,7.0,27.0,3.8
-North Gujarat,Patan,1.0,Amirgadh,801.0,2.0,49.0,51.0,6.37
 North Gujarat,Patan,1.0,Chanasma,502.0,3.0,0.0,3.0,0.6
-North Gujarat,Patan,2.0,Bhabhar,531.0,17.0,0.0,17.0,3.2
 North Gujarat,Patan,2.0,Harij,587.0,22.0,0.0,22.0,3.75
-North Gujarat,Patan,3.0,Danta,891.0,2.0,11.0,13.0,1.46
 North Gujarat,Patan,3.0,Patan,706.0,22.0,0.0,22.0,3.12
-North Gujarat,Patan,4.0,Dantiwada,652.0,5.0,8.0,13.0,1.99
 North Gujarat,Patan,4.0,Radhanpur,671.0,7.0,0.0,7.0,1.04
-North Gujarat,Patan,5.0,Deesa,679.0,4.0,12.0,16.0,2.36
 North Gujarat,Patan,5.0,Sami,520.0,46.0,0.0,46.0,8.85
 North Gujarat,Patan,6.0,Santalpur,454.0,40.0,0.0,40.0,8.81
 North Gujarat,Patan,7.0,Sarswati,699.0,13.0,0.0,13.0,1.86

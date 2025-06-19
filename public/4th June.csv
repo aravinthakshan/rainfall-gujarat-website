@@ -1,38 +1,40 @@
 region,district,sr_no,taluka,avg_rain_1995_2024,rain_till_yesterday,rain_last_24hrs,total_rainfall,percent_against_avg
-East Central Gujarat,East Central Gujarat Region,,East Central Gujarat Region Avg,805.0,13.0,0.0,13.0,1.59
+East Central Gujarat,East Central Gujarat Region,,East Central Gujarat Region Avg,805.0,12.0,0.0,13.0,1.58
 East-CENTRAL GUJARAT,Ahmedabad,1.0,Ahmedabad City,806.0,1.0,0.0,1.0,0.1
 East-CENTRAL GUJARAT,Ahmedabad,1.0,Galteshwar,753.0,0.0,0.0,0.0,0.0
 East-CENTRAL GUJARAT,Ahmedabad,2.0,Bavla,658.0,0.0,0.0,0.0,0.0
 East-CENTRAL GUJARAT,Ahmedabad,3.0,Daskroi,617.0,0.0,0.0,0.0,0.0
 East-CENTRAL GUJARAT,Ahmedabad,4.0,Detroj-rampura,568.0,0.0,0.0,0.0,0.0
-East-CENTRAL GUJARAT,Ahmedabad,5.0,Dhandhuka,739.0,8.0,0.0,8.0,1.0
+East-CENTRAL GUJARAT,Ahmedabad,5.0,Dhandhuka,739.0,4.0,4.0,8.0,1.0
 East-CENTRAL GUJARAT,Ahmedabad,6.0,Dholera,694.0,13.0,0.0,13.0,1.8
 East-CENTRAL GUJARAT,Ahmedabad,7.0,Dholka,730.0,30.0,0.0,30.0,4.1
 East-CENTRAL GUJARAT,Ahmedabad,8.0,Mandal,498.0,31.0,0.0,31.0,6.2
 East-CENTRAL GUJARAT,Ahmedabad,9.0,Sanand,772.0,0.0,0.0,0.0,0.0
 East-CENTRAL GUJARAT,Ahmedabad,10.0,Viramgam,599.0,11.0,0.0,11.0,1.8
-East-CENTRAL GUJARAT,Ahmedabad,,Ahmedabad District Avg,668.0,9.4,0.0,9.4,1.4
+East-CENTRAL GUJARAT,Ahmedabad,,Ahmedabad District Avg,668.0,9.0,0.4,9.4,1.4
 East-CENTRAL GUJARAT,Anand,1.0,Anand,889.0,67.0,0.0,67.0,7.5
 East-CENTRAL GUJARAT,Anand,2.0,Anklav,833.0,21.0,0.0,21.0,2.5
 East-CENTRAL GUJARAT,Anand,3.0,Borsad,855.0,6.0,0.0,6.0,0.7
+East-CENTRAL GUJARAT,Anand,4.0,Khambhat,801.0,91.0,0.0,91.0,11.3
 East-CENTRAL GUJARAT,Anand,5.0,Petlad,818.0,68.0,0.0,68.0,8.3
+East-CENTRAL GUJARAT,Anand,6.0,Sojitra,735.0,78.0,0.0,78.0,10.6
 East-CENTRAL GUJARAT,Anand,7.0,Tarapur,697.0,69.0,0.0,69.0,9.9
 East-CENTRAL GUJARAT,Anand,8.0,Umreth,644.0,0.0,0.0,0.0,0.0
 East-CENTRAL GUJARAT,Anand,,Anand District Avg,784.0,50.0,0.0,50.0,6.3
-East-CENTRAL GUJARAT,Chhota Udepur,1.0,Bodeli,1201.0,2.0,0.0,2.0,0.17
+East-CENTRAL GUJARAT,Chhota Udepur,1.0,Bodeli,1201.0,1.0,0.0,1.0,0.08
 East-CENTRAL GUJARAT,Chhota Udepur,2.0,Chhota Udepur,1001.0,2.0,0.0,2.0,0.2
 East-CENTRAL GUJARAT,Chhota Udepur,3.0,Jetpur Pavi,1048.0,0.0,0.0,0.0,0.0
 East-CENTRAL GUJARAT,Chhota Udepur,4.0,Nasvadi,917.0,0.0,0.0,0.0,0.0
 East-CENTRAL GUJARAT,Chhota Udepur,5.0,Kavant,1006.0,0.0,0.0,0.0,0.0
 East-CENTRAL GUJARAT,Dahod,1.0,Dahod,765.0,1.0,0.0,1.0,0.13
-East-CENTRAL GUJARAT,Dahod,2.0,Devgadbaria,710.0,1.0,0.0,1.0,0.14
+East-CENTRAL GUJARAT,Dahod,2.0,Devgadbaria,710.0,0.0,1.0,1.0,0.14
 East-CENTRAL GUJARAT,Dahod,3.0,Dhanpur,670.0,8.0,0.0,8.0,1.19
 East-CENTRAL GUJARAT,Dahod,4.0,Fatepura,725.0,38.0,0.0,38.0,5.24
-East-CENTRAL GUJARAT,Dahod,5.0,Garbada,631.0,4.0,0.0,4.0,0.63
+East-CENTRAL GUJARAT,Dahod,5.0,Garbada,631.0,2.0,0.0,2.0,0.32
 East-CENTRAL GUJARAT,Dahod,6.0,Jhalod,672.0,7.0,0.0,7.0,1.04
 East-CENTRAL GUJARAT,Dahod,7.0,Limkheda,734.0,3.0,0.0,3.0,0.41
 East-CENTRAL GUJARAT,Dahod,9.0,Sanjeli,702.0,0.0,0.0,0.0,0.0
-East-CENTRAL GUJARAT,Dahod,,Dahod District Avg,701.0,6.9,0.0,6.9,0.98
+East-CENTRAL GUJARAT,Dahod,,Dahod District Avg,701.0,6.6,0.1,6.7,0.95
 East-CENTRAL GUJARAT,Dahod,,Singvad,702.0,0.0,0.0,0.0,0.0
 East-CENTRAL GUJARAT,Kheda,2.0,Kapadvanj,932.0,0.0,0.0,0.0,0.0
 East-CENTRAL GUJARAT,Kheda,3.0,Kathlal,866.0,0.0,0.0,0.0,0.0
@@ -67,8 +69,8 @@ East-CENTRAL GUJARAT,Vadodara,5.0,Savli,801.0,0.0,0.0,0.0,0.0
 East-CENTRAL GUJARAT,Vadodara,6.0,Sankheda,1175.0,4.0,0.0,4.0,0.34
 East-CENTRAL GUJARAT,Vadodara,6.0,Sinor,749.0,4.0,0.0,4.0,0.5
 East-CENTRAL GUJARAT,Vadodara,7.0,Vadodara,1088.0,0.0,0.0,0.0,0.0
-East-CENTRAL GUJARAT,Vadodara,8.0,Vaghodia,718.0,16.0,0.0,16.0,2.2
-East-CENTRAL GUJARAT,Vadodara,,Vadodara District Avg,864.0,4.8,0.0,4.8,0.5
+East-CENTRAL GUJARAT,Vadodara,8.0,Vaghodia,718.0,1.0,15.0,16.0,2.2
+East-CENTRAL GUJARAT,Vadodara,,Vadodara District Avg,864.0,2.9,1.9,4.8,0.5
 Kachchh,Kachchh,1.0,Abdasa,454.0,0.0,0.0,0.0,0.0
 Kachchh,Kachchh,2.0,Anjar,542.0,0.0,0.0,0.0,0.0
 Kachchh,Kachchh,3.0,Bhachau,476.0,0.0,0.0,0.0,0.0
@@ -140,32 +142,32 @@ North Gujarat,Sabarkantha,,Talod,825.0,10.0,0.0,10.0,1.21
 North Gujarat,Sabarkantha,,Vadali,850.0,9.0,0.0,9.0,1.06
 North Gujarat,Sabarkantha,,Vijaynagar,832.0,12.0,0.0,12.0,1.44
 Saurashtra,Amreli,1.0,Amreli,704.0,0.0,0.0,0.0,0.0
-Saurashtra,Amreli,2.0,Babra,688.0,54.0,0.0,54.0,7.85
+Saurashtra,Amreli,2.0,Babra,688.0,0.0,0.0,0.0,0.0
 Saurashtra,Amreli,3.0,Bagasara,724.0,0.0,0.0,0.0,0.0
 Saurashtra,Amreli,4.0,Dhari,629.0,0.0,0.0,0.0,0.0
 Saurashtra,Amreli,5.0,Jafrabad,681.0,0.0,0.0,0.0,0.0
-Saurashtra,Amreli,7.0,Lathi,646.0,9.0,0.0,9.0,1.39
-Saurashtra,Amreli,8.0,Lilia,657.0,5.0,0.0,5.0,0.76
+Saurashtra,Amreli,7.0,Lathi,646.0,0.0,0.0,0.0,0.0
+Saurashtra,Amreli,8.0,Lilia,657.0,0.0,0.0,0.0,0.0
 Saurashtra,Amreli,9.0,Rajula,719.0,0.0,0.0,0.0,0.0
 Saurashtra,Amreli,10.0,Savar kundla,694.0,0.0,0.0,0.0,0.0
-Saurashtra,Amreli,11.0,Kunkavav Vadia,707.0,32.0,0.0,32.0,4.53
-Saurashtra,Amreli,,Amreli District Avg,685.0,9.09,0.0,9.09,1.33
+Saurashtra,Amreli,11.0,Kunkavav Vadia,707.0,0.0,0.0,0.0,0.0
+Saurashtra,Amreli,,Amreli District Avg,685.0,0.0,0.0,0.0,0.0
 Saurashtra,Bhavnagar,1.0,Bhavnagar,762.0,0.0,0.0,0.0,0.0
-Saurashtra,Bhavnagar,2.0,Gariadhar,458.0,5.0,0.0,5.0,1.09
+Saurashtra,Bhavnagar,2.0,Gariadhar,458.0,0.0,0.0,0.0,0.0
 Saurashtra,Bhavnagar,3.0,Ghogha,630.0,0.0,0.0,0.0,0.0
 Saurashtra,Bhavnagar,4.0,Jesar,649.0,0.0,0.0,0.0,0.0
 Saurashtra,Bhavnagar,5.0,Mahuva (Bhavnagar),688.0,0.0,0.0,0.0,0.0
 Saurashtra,Bhavnagar,6.0,Palitana,608.0,5.0,0.0,5.0,0.82
-Saurashtra,Bhavnagar,7.0,Shihor,645.0,9.0,0.0,9.0,1.4
+Saurashtra,Bhavnagar,7.0,Shihor,645.0,0.0,9.0,9.0,1.4
 Saurashtra,Bhavnagar,8.0,Talaja,569.0,0.0,0.0,0.0,0.0
-Saurashtra,Bhavnagar,9.0,Umrala,614.0,2.0,0.0,2.0,0.33
+Saurashtra,Bhavnagar,9.0,Umrala,614.0,0.0,2.0,2.0,0.33
 Saurashtra,Bhavnagar,10.0,Vallabhipur,655.0,0.0,0.0,0.0,0.0
-Saurashtra,Bhavnagar,,Bhavnagar District Avg,628.0,2.1,0.0,2.1,0.33
-Saurashtra,Botad,1.0,Botad,625.0,20.0,0.0,20.0,3.2
+Saurashtra,Bhavnagar,,Bhavnagar District Avg,628.0,0.5,1.1,1.6,0.25
+Saurashtra,Botad,1.0,Botad,625.0,0.0,0.0,0.0,0.0
 Saurashtra,Botad,2.0,Barwala,682.0,0.0,0.0,0.0,0.0
 Saurashtra,Botad,3.0,Gadhada,616.0,0.0,0.0,0.0,0.0
-Saurashtra,Botad,4.0,Ranpur,637.0,3.0,0.0,3.0,0.47
-Saurashtra,Botad,,Botad District Avg,640.0,5.75,0.0,5.75,0.9
+Saurashtra,Botad,4.0,Ranpur,637.0,0.0,0.0,0.0,0.0
+Saurashtra,Botad,,Botad District Avg,640.0,0.0,0.0,0.0,0.0
 Saurashtra,Devbhumi Dwarka,1.0,Bhanvad,777.0,0.0,0.0,0.0,0.0
 Saurashtra,Devbhumi Dwarka,2.0,Dwarka,627.0,0.0,0.0,0.0,0.0
 Saurashtra,Devbhumi Dwarka,3.0,Kalyanpur,939.0,0.0,0.0,0.0,0.0
@@ -181,10 +183,10 @@ Saurashtra,Jamnagar,2.0,JamJodhpur,788.0,0.0,0.0,0.0,0.0
 Saurashtra,Jamnagar,3.0,Jamnagar,824.0,0.0,0.0,0.0,0.0
 Saurashtra,Jamnagar,4.0,Jodiya,683.0,0.0,0.0,0.0,0.0
 Saurashtra,Jamnagar,4.0,Khambhalia,938.0,0.0,0.0,0.0,0.0
-Saurashtra,Jamnagar,5.0,Kalavad,714.0,2.0,0.0,2.0,0.28
+Saurashtra,Jamnagar,5.0,Kalavad,714.0,0.0,0.0,0.0,0.0
 Saurashtra,Jamnagar,6.0,Lalpur,776.0,0.0,0.0,0.0,0.0
-Saurashtra,Jamnagar,,Jamnagar District Avg,736.0,0.3,0.0,0.3,0.05
-Saurashtra,Junagadh,1.0,Bhesan,783.0,8.0,0.0,8.0,1.02
+Saurashtra,Jamnagar,,Jamnagar District Avg,736.0,0.0,0.0,0.0,0.0
+Saurashtra,Junagadh,1.0,Bhesan,783.0,0.0,0.0,0.0,0.0
 Saurashtra,Junagadh,2.0,Junagadh,1070.0,0.0,0.0,0.0,0.0
 Saurashtra,Junagadh,3.0,Junagadh City,1070.0,0.0,0.0,0.0,0.0
 Saurashtra,Junagadh,4.0,Keshod,981.0,0.0,0.0,0.0,0.0
@@ -195,7 +197,7 @@ Saurashtra,Junagadh,7.0,Mangrol(Junagadh),955.0,0.0,0.0,0.0,0.0
 Saurashtra,Junagadh,8.0,Mendarda,1051.0,0.0,0.0,0.0,0.0
 Saurashtra,Junagadh,9.0,Vanthali,1067.0,0.0,0.0,0.0,0.0
 Saurashtra,Junagadh,10.0,Visavadar,1266.0,0.0,0.0,0.0,0.0
-Saurashtra,Junagadh,,Junagadh District Avg,1031.0,1.0,0.0,1.0,0.1
+Saurashtra,Junagadh,,Junagadh District Avg,1031.0,0.2,0.0,0.2,0.02
 Saurashtra,Morbi,1.0,Halvad,497.0,0.0,0.0,0.0,0.0
 Saurashtra,Morbi,2.0,Maliya,498.0,0.0,0.0,0.0,0.0
 Saurashtra,Morbi,9.0,Thangadh,630.0,0.0,0.0,0.0,0.0
@@ -204,7 +206,7 @@ Saurashtra,Porbandar,2.0,Porbandar,786.0,0.0,0.0,0.0,0.0
 Saurashtra,Porbandar,3.0,Ranavav,864.0,0.0,0.0,0.0,0.0
 Saurashtra,Porbandar,,Porbandar District Avg,833.0,0.0,0.0,0.0,0.0
 Saurashtra,Rajkot,1.0,Dhoraji,812.0,0.0,0.0,0.0,0.0
-Saurashtra,Rajkot,2.0,Gondal,785.0,22.0,0.0,22.0,2.8
+Saurashtra,Rajkot,2.0,Gondal,785.0,0.0,0.0,0.0,0.0
 Saurashtra,Rajkot,3.0,Jamkandorna,743.0,0.0,0.0,0.0,0.0
 Saurashtra,Rajkot,3.0,Morbi,666.0,0.0,0.0,0.0,0.0
 Saurashtra,Rajkot,4.0,Jasdan,579.0,0.0,0.0,0.0,0.0
@@ -212,13 +214,13 @@ Saurashtra,Rajkot,4.0,Tankara,664.0,0.0,0.0,0.0,0.0
 Saurashtra,Rajkot,5.0,Jetpur,763.0,0.0,0.0,0.0,0.0
 Saurashtra,Rajkot,5.0,Wankaner,545.0,0.0,0.0,0.0,0.0
 Saurashtra,Rajkot,6.0,Kotda Sangani,785.0,0.0,0.0,0.0,0.0
-Saurashtra,Rajkot,7.0,Lodhika,781.0,25.0,0.0,25.0,3.2
+Saurashtra,Rajkot,7.0,Lodhika,781.0,0.0,0.0,0.0,0.0
 Saurashtra,Rajkot,8.0,Paddhari,552.0,0.0,0.0,0.0,0.0
-Saurashtra,Rajkot,9.0,Rajkot,840.0,13.0,0.0,13.0,1.55
+Saurashtra,Rajkot,9.0,Rajkot,840.0,0.0,0.0,0.0,0.0
 Saurashtra,Rajkot,10.0,Upleta,847.0,0.0,0.0,0.0,0.0
 Saurashtra,Rajkot,11.0,Vinchhiya,547.0,0.0,0.0,0.0,0.0
-Saurashtra,Rajkot,,Rajkot District Avg,730.0,5.5,0.0,5.5,0.75
-Saurashtra,Saurashtra Region,,Saurashtra Region Avg,748.0,3.46,0.0,3.46,0.46
+Saurashtra,Rajkot,,Rajkot District Avg,730.0,0.0,0.0,0.0,0.0
+Saurashtra,Saurashtra Region,,Saurashtra Region Avg,748.0,0.85,0.14,0.99,0.13
 Saurashtra,Surendranagar,1.0,Chotila,686.0,0.0,0.0,0.0,0.0
 Saurashtra,Surendranagar,2.0,Chuda,600.0,0.0,0.0,0.0,0.0
 Saurashtra,Surendranagar,3.0,Dasada,582.0,1.0,0.0,1.0,0.17
@@ -232,37 +234,37 @@ Saurashtra,Surendranagar,,Surendranagar District Avg,597.0,5.8,0.0,5.8,0.97
 South Gujarat,Bharuch,1.0,Amod,490.0,4.0,0.0,4.0,0.82
 South Gujarat,Bharuch,2.0,Anklesvar,788.0,0.0,0.0,0.0,0.0
 South Gujarat,Bharuch,3.0,Bharuch,963.0,4.0,0.0,4.0,0.42
-South Gujarat,Bharuch,4.0,Hansot,892.0,24.0,0.0,24.0,2.69
+South Gujarat,Bharuch,4.0,Hansot,892.0,18.0,6.0,24.0,2.69
 South Gujarat,Bharuch,5.0,Jambusar,543.0,5.0,0.0,5.0,0.92
 South Gujarat,Bharuch,6.0,Jhagadia,726.0,0.0,0.0,0.0,0.0
 South Gujarat,Bharuch,7.0,Netrang,861.0,0.0,0.0,0.0,0.0
 South Gujarat,Bharuch,8.0,Vagra,787.0,1.0,0.0,1.0,0.13
 South Gujarat,Bharuch,9.0,Valia,817.0,10.0,0.0,10.0,1.22
-South Gujarat,Bharuch,,Bharuch District Avg,763.0,5.33,0.0,5.33,0.7
-South Gujarat,Dang,1.0,Dang-Ahwa,2260.0,6.0,12.0,18.0,0.8
-South Gujarat,Dang,3.0,Vaghai,2423.0,0.0,9.0,9.0,0.37
-South Gujarat,Dang,,Dang District Avg,2283.0,2.0,10.33,12.33,0.54
-South Gujarat,Dang,,State Average,882.0,7.52,0.47,7.99,0.9
+South Gujarat,Bharuch,,Bharuch District Avg,763.0,4.67,0.67,5.33,0.7
+South Gujarat,Dang,1.0,Dang-Ahwa,2260.0,0.0,0.0,0.0,0.0
+South Gujarat,Dang,3.0,Vaghai,2423.0,0.0,0.0,0.0,0.0
+South Gujarat,Dang,,Dang District Avg,2283.0,0.0,0.0,0.0,0.0
+South Gujarat,Dang,,State Average,882.0,6.09,0.59,6.68,0.76
 South Gujarat,Narmada,1.0,Dediapada,1230.0,0.0,0.0,0.0,0.0
 South Gujarat,Narmada,2.0,Garudeshwar,989.0,4.0,0.0,4.0,0.4
 South Gujarat,Narmada,3.0,Nandod,1004.0,1.0,0.0,1.0,0.1
 South Gujarat,Narmada,4.0,Sagbara,1189.0,2.0,0.0,2.0,0.17
 South Gujarat,Narmada,5.0,Tilakwada,1057.0,0.0,0.0,0.0,0.0
 South Gujarat,Narmada,,Narmada District Avg,1094.0,1.4,0.0,1.4,0.13
-South Gujarat,Navsari,1.0,Chikhli,1880.0,54.0,3.0,57.0,3.03
-South Gujarat,Navsari,2.0,Gandevi,1867.0,33.0,0.0,33.0,1.77
-South Gujarat,Navsari,3.0,Jalalpore,1722.0,36.0,1.0,37.0,2.15
-South Gujarat,Navsari,4.0,Khergam,1988.0,5.0,5.0,10.0,0.5
-South Gujarat,Navsari,5.0,Navsari,1809.0,35.0,1.0,36.0,1.99
-South Gujarat,Navsari,6.0,Vansada,1939.0,2.0,2.0,4.0,0.21
-South Gujarat,Navsari,,Navsari District Avg,1868.0,27.5,2.0,29.5,1.58
-South Gujarat,South Gujarat Region,,South Gujarat Region Avg,1490.0,8.89,2.57,11.46,0.77
+South Gujarat,Navsari,1.0,Chikhli,1880.0,36.0,18.0,54.0,2.87
+South Gujarat,Navsari,2.0,Gandevi,1867.0,24.0,9.0,33.0,1.77
+South Gujarat,Navsari,3.0,Jalalpore,1722.0,13.0,23.0,36.0,2.09
+South Gujarat,Navsari,4.0,Khergam,1988.0,2.0,3.0,5.0,0.25
+South Gujarat,Navsari,5.0,Navsari,1809.0,6.0,29.0,35.0,1.93
+South Gujarat,Navsari,6.0,Vansada,1939.0,2.0,0.0,2.0,0.1
+South Gujarat,Navsari,,Navsari District Avg,1868.0,13.83,13.67,27.5,1.47
+South Gujarat,South Gujarat Region,,South Gujarat Region Avg,1490.0,6.15,2.54,8.7,0.58
 South Gujarat,Surat,1.0,Bardoli,1479.0,3.0,0.0,3.0,0.2
 South Gujarat,Surat,2.0,Chorasi,1323.0,2.0,0.0,2.0,0.15
 South Gujarat,Surat,3.0,Kamrej,1450.0,9.0,0.0,9.0,0.62
 South Gujarat,Surat,4.0,Mahuva,1624.0,3.0,0.0,3.0,0.18
 South Gujarat,Surat,5.0,Mandvi,1510.0,0.0,0.0,0.0,0.0
-South Gujarat,Surat,5.0,Vyara,1680.0,10.0,1.0,11.0,0.65
+South Gujarat,Surat,5.0,Vyara,1680.0,10.0,0.0,10.0,0.6
 South Gujarat,Surat,6.0,Mangrol,1415.0,3.0,0.0,3.0,0.21
 South Gujarat,Surat,7.0,Olpad,1051.0,5.0,0.0,5.0,0.48
 South Gujarat,Surat,8.0,Palsana,1483.0,3.0,0.0,3.0,0.2
@@ -270,17 +272,17 @@ South Gujarat,Surat,9.0,Surat City,1430.0,3.0,0.0,3.0,0.21
 South Gujarat,Surat,10.0,Umarpada,1918.0,0.0,0.0,0.0,0.0
 South Gujarat,Surat,,Surat District Avg,1468.0,3.1,0.0,3.1,0.21
 South Gujarat,Tapi,1.0,Nizar,899.0,0.0,0.0,0.0,0.0
-South Gujarat,Tapi,2.0,Songadh,1754.0,0.0,2.0,2.0,0.11
-South Gujarat,Tapi,2.0,Subir,2167.0,0.0,10.0,10.0,0.46
-South Gujarat,Tapi,3.0,Uchchhal,1001.0,0.0,1.0,1.0,0.1
-South Gujarat,Tapi,4.0,Valod,1521.0,19.0,1.0,20.0,1.31
+South Gujarat,Tapi,2.0,Songadh,1754.0,0.0,0.0,0.0,0.0
+South Gujarat,Tapi,2.0,Subir,2167.0,0.0,0.0,0.0,0.0
+South Gujarat,Tapi,3.0,Uchchhal,1001.0,0.0,0.0,0.0,0.0
+South Gujarat,Tapi,4.0,Valod,1521.0,19.0,0.0,19.0,1.25
 South Gujarat,Tapi,6.0,Dolvan,1785.0,23.0,0.0,23.0,1.29
-South Gujarat,Tapi,7.0,Kukarmunda,931.0,0.0,5.0,5.0,0.54
-South Gujarat,Tapi,,Tapi District Avg,1367.0,7.43,1.43,8.86,0.65
-South Gujarat,Valsad,1.0,Dharampur,2443.0,3.0,7.0,10.0,0.41
-South Gujarat,Valsad,2.0,Kaprada,2917.0,19.0,3.0,22.0,0.75
-South Gujarat,Valsad,3.0,Pardi,2188.0,23.0,2.0,25.0,1.14
-South Gujarat,Valsad,4.0,Umbergaon,1979.0,37.0,24.0,61.0,3.08
-South Gujarat,Valsad,5.0,Valsad,2080.0,6.0,5.0,11.0,0.53
-South Gujarat,Valsad,6.0,Vapi,2277.0,12.0,24.0,36.0,1.58
-South Gujarat,Valsad,,Valsad District Avg,2314.0,16.67,10.83,27.5,1.19
+South Gujarat,Tapi,7.0,Kukarmunda,931.0,0.0,0.0,0.0,0.0
+South Gujarat,Tapi,,Tapi District Avg,1367.0,7.43,0.0,7.43,0.54
+South Gujarat,Valsad,1.0,Dharampur,2443.0,3.0,0.0,3.0,0.12
+South Gujarat,Valsad,2.0,Kaprada,2917.0,6.0,10.0,16.0,0.55
+South Gujarat,Valsad,3.0,Pardi,2188.0,23.0,0.0,23.0,1.05
+South Gujarat,Valsad,4.0,Umbergaon,1979.0,24.0,13.0,37.0,1.87
+South Gujarat,Valsad,5.0,Valsad,2080.0,0.0,6.0,6.0,0.29
+South Gujarat,Valsad,6.0,Vapi,2277.0,12.0,0.0,12.0,0.53
+South Gujarat,Valsad,,Valsad District Avg,2314.0,11.33,4.83,16.17,0.7

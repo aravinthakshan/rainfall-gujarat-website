@@ -39,12 +39,26 @@ function getColor(value: number) {
 
 // Hardcoded CSV file list (since we can't list files in public from client-side)
 const csvFilesList = [
+  "1st June.csv",
+  "2nd June.csv",
+  "3rd June.csv",
+  "4th June.csv",
+  "5th June.csv",
+  "6th June.csv",
+  "7th June.csv",
+  "8th June.csv",
+  "9th June.csv",
+  "10th June.csv",
+  "11th June.csv",
+  "12th June.csv",
   "13th June.csv",
   "14th June.csv",
   "15th June.csv",
   "16th June.csv",
   "17th June.csv",
-]
+];
+
+
 
 type CsvRow = Record<string, string>
 
@@ -392,9 +406,9 @@ const MapsPage: React.FC = () => {
             ))}
           </select>
         </div>
-        {/* Map and Time Series Side by Side */}
-        <div className="flex w-full h-[calc(100vh-260px)]">
-          <div className="flex-1 relative border rounded bg-white dark:bg-slate-900">
+        {/* Map and Time Series Side by Side (desktop), stacked (mobile) */}
+        <div className="flex flex-col md:flex-row w-full h-auto md:h-[calc(100vh-260px)] gap-4">
+          <div className="w-full md:flex-1 relative border rounded bg-white dark:bg-slate-900 h-[60vh] md:h-auto mb-4 md:mb-0">
             {geojson ? (
               <MapViewWithClick 
                 geojson={geojson} 
@@ -425,7 +439,7 @@ const MapsPage: React.FC = () => {
               </div>
             </div>
           </div>
-          <div className="flex-1 flex items-center justify-center p-4">
+          <div className="w-full md:flex-1 flex items-center justify-center p-0 md:p-4">
             <TimeSeriesPlot tehsil={selectedTehsil} data={allCsvData} metric={selectedMetric} />
           </div>
         </div>

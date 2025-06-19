@@ -44,25 +44,24 @@ type MatchingAnalysis = {
   matchPercentage: number
 }
 
-const csvFilesList = [
-  "13th June.csv",
-  "14th June.csv", 
-  "15th June.csv",
-  "16th June.csv",
-  "17th June.csv",
-]
-
 const TestPage: React.FC = () => {
+  const [csvFilesList, setCsvFilesList] = useState<string[]>([])
   const [csvFiles, setCsvFiles] = useState<FileStatus[]>([])
   const [geojsonStatus, setGeojsonStatus] = useState<GeoJsonStatus>({ status: 'loading' })
   const [matchingAnalysis, setMatchingAnalysis] = useState<MatchingAnalysis | null>(null)
   const [overallStatus, setOverallStatus] = useState<'loading' | 'success' | 'error'>('loading')
 
+  // Fetch CSV file list from API on mount
+  useEffect(() => {
+    fetch('/api/csv-files')
+      .then(res => res.json())
+      .then(data => setCsvFilesList(data.files))
+  }, [])
+
   // Load and analyze CSV files
   useEffect(() => {
     const loadCsvFiles = async () => {
       const fileStatuses: FileStatus[] = []
-      
       for (const filename of csvFilesList) {
         try {
           const response = await fetch(`/${filename}`)
@@ -74,10 +73,8 @@ const TestPage: React.FC = () => {
             })
             continue
           }
-          
           const text = await response.text()
           const rows = text.split("\n").filter(Boolean)
-          
           if (rows.length === 0) {
             fileStatuses.push({
               filename,
@@ -86,10 +83,8 @@ const TestPage: React.FC = () => {
             })
             continue
           }
-          
           const headers = rows[0].split(",").map(h => h.trim())
           const data = rows.slice(1)
-          
           fileStatuses.push({
             filename,
             status: 'success',
@@ -104,12 +99,12 @@ const TestPage: React.FC = () => {
           })
         }
       }
-      
       setCsvFiles(fileStatuses)
     }
-    
-    loadCsvFiles()
-  }, [])
+    if (csvFilesList.length > 0) {
+      loadCsvFiles()
+    }
+  }, [csvFilesList])
 
   // Load and analyze GeoJSON
   useEffect(() => {

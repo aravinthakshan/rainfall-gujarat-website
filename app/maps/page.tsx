@@ -55,6 +55,8 @@ const csvFilesList = [
   "15th June.csv",
   "16th June.csv",
   "17th June.csv",
+  "18th June.csv",
+
 ];
 type CsvRow = Record<string, string>
 

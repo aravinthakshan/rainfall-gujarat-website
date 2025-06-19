@@ -70,9 +70,12 @@ const teamMembers = [
                     solutions for water management, climate resilience, and sustainable development in the face of
                     changing environmental conditions.
                   </p>
-                  <div className="flex justify-center pt-2">
+                  <div className="flex flex-col sm:flex-row justify-center pt-2 gap-2">
                     <Button asChild size="lg" className="text-base font-semibold px-8 py-2">
                       <a href="/maps">Explore Maps</a>
+                    </Button>
+                    <Button asChild size="lg" className="text-base font-semibold px-8 py-2" variant="secondary">
+                      <a href="/case-study">Case Study</a>
                     </Button>
                   </div>
                 </div>

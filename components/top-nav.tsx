@@ -17,6 +17,7 @@ export function TopNavigation() {
   const navItems = [
     { href: "/about", label: "About Us", icon: Home },
     { href: "/maps", label: "Maps", icon: Map },
+    { href: "/case-study", label: "Case Study", icon: Database },
     // { href: "/test", label: "Test", icon: Database },
     // { href: "/dashboard", label: "Dashboard", icon: BarChart3 },
   ]

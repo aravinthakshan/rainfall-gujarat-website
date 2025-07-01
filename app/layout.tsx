@@ -4,6 +4,7 @@ import { Inter } from "next/font/google"
 import "./globals.css"
 import { ThemeProvider } from "@/components/theme-provider"
 import { TopNavigation } from "@/components/top-nav"
+import { AuthProvider } from "../research-blog/lib/auth-context"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -77,10 +78,12 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <div className="min-h-screen w-full flex flex-col">
-            <TopNavigation />
-            <main className="flex-1 w-full">{children}</main>
-          </div>
+          <AuthProvider>
+            <div className="min-h-screen w-full flex flex-col">
+              <TopNavigation />
+              <main className="flex-1 w-full">{children}</main>
+            </div>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -5,17 +5,6 @@ import Image from "next/image"
 
 const teamMembers = [
     {
-      name: "Prof. Vimal Mishra",
-      title: "Professor, Civil Engineering, IIT Gandhinagar",
-      description:
-        "Advisor",
-      image: "/Vimal Mishra.a1d42ea96aa0546a5fd5.jpg",
-      linkedin: "#",
-      scholar: "#",
-      github: "#",
-      email: "vimal.mishra@iitgn.ac.in",
-    },
-    {
       name: "Hiren Solanki",
       title: "PhD Research Scholar",
       description: "Machine Learning, Deep Learning, Hydroclimatic extremes, Remote Sensing, Paleoclimate",
@@ -72,7 +61,7 @@ const teamMembers = [
                       <a href="/maps">Explore Maps</a>
                     </Button>
                     <Button asChild size="lg" className="text-base font-semibold px-8 py-2" variant="secondary">
-                      <a href="/case-study">Case Study</a>
+                      <a href="/blog">Blogs</a>
                     </Button>
                   </div>
                 </div>

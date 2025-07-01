@@ -71,29 +71,29 @@ const teamMembers = [
             {/* Team Section */}
             <div className="space-y-6">
               <h2 className="text-2xl font-bold text-center">Our Team</h2>
-              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <div className="grid gap-14 grid-cols-1 sm:grid-cols-2 md:grid-cols-3 max-w-7xl mx-auto justify-items-center">
                 {teamMembers.map((member, index) => (
-                  <Card key={index} className="overflow-hidden shadow-sm">
-                    <CardContent className="p-4">
-                      <div className="flex flex-col items-center text-center gap-2">
+                  <Card key={index} className="overflow-hidden shadow-sm w-full max-w-xl">
+                    <CardContent className="p-20">
+                      <div className="flex flex-col items-center text-center gap-8">
                         {/* Profile Image */}
-                        <div className="w-30 h-30 rounded-full overflow-hidden bg-muted">
+                        <div className="w-64 h-64 rounded-full overflow-hidden bg-muted">
                           <Image
                             src={member.image || "/placeholder.svg"}
                             alt={member.name}
-                            width={80}
-                            height={80}
+                            width={256}
+                            height={256}
                             className="w-full h-full object-cover"
                           />
                         </div>
                         {/* Name and Title */}
                         <div className="space-y-0.5">
-                          <h3 className="text-xl font-semibold">{member.name}</h3>
-                          <p className="text-l font-medium text-primary">{member.title}</p>
+                          <h3 className="text-lg font-semibold">{member.name}</h3>
+                          <p className="text-sm font-medium text-primary">{member.title}</p>
                         </div>
                         {/* Research Interests */}
                         <div className="space-y-0.5">
-                          <p className="text-s text-muted-foreground leading-snug">{member.description}</p>
+                          <p className="text-xs text-muted-foreground leading-snug">{member.description}</p>
                         </div>
                         {/* Social Links */}
                         <div className="flex gap-1 pt-1">

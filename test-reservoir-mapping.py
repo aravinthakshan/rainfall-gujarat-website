@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 import pandas as pd
+import os
 from pymongo import MongoClient
 
 # Configuration
-MONGO_URI = "mongodb+srv://aravinth:sahlt2j03Damwzse@blogsmarkdown.66vqnyy.mongodb.net/rainfall-data?retryWrites=true&w=majority&appName=BlogsMarkdown"
+MONGO_URI = os.environ.get('MONGODB_URI')
+if not MONGO_URI:
+    raise RuntimeError('Please set the MONGODB_URI environment variable.')
 DB_NAME = "rainfall-data"
 COLLECTION_NAME = "reservoirdatas"
 

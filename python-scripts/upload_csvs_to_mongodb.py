@@ -2,10 +2,10 @@ import os
 import pandas as pd
 from pymongo import MongoClient
 
-# Your MongoDB Atlas connection string with database name
-MONGO_URI = "mongodb+srv://aravinth:sahlt2j03Damwzse@blogsmarkdown.66vqnyy.mongodb.net/rainfall-data?retryWrites=true&w=majority&appName=BlogsMarkdown"
+MONGO_URI = os.environ.get('MONGODB_URI')
+if not MONGO_URI:
+    raise RuntimeError('Please set the MONGODB_URI environment variable.')
 DB_NAME = "rainfall-data"
-COLLECTION_NAME = "rainfalldatas"
 
 # Directory containing your CSVs
 CSV_DIR = "/home/aravinthakshan/Projects/rainfall-website-final/public"

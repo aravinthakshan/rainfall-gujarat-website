@@ -1,12 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { MongoClient } from 'mongodb';
 
-const uri = process.env.MONGODB_URI || 'mongodb+srv://aravinth:sahlt2j03Damwzse@blogsmarkdown.66vqnyy.mongodb.net/rainfall-data?retryWrites=true&w=majority&appName=BlogsMarkdown';
+const uri = process.env.MONGODB_URI;
+if (!uri) {
+  throw new Error('Please define the MONGODB_URI environment variable inside your deployment settings.');
+}
 const DB_NAME = 'rainfall-data';
 const COLLECTION_NAME = 'reservoirdatas';
 
 export async function GET(req: NextRequest) {
-  const client = new MongoClient(uri);
+  const client = new MongoClient(uri!);
   try {
     await client.connect();
     const db = client.db(DB_NAME);

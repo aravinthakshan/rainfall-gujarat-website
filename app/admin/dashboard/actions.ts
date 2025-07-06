@@ -114,7 +114,10 @@ try:
     records = df.to_dict('records')
     
     # Connect to MongoDB
-    MONGO_URI = "mongodb+srv://aravinth:sahlt2j03Damwzse@blogsmarkdown.66vqnyy.mongodb.net/rainfall-data?retryWrites=true&w=majority&appName=BlogsMarkdown"
+    MONGO_URI = os.environ.get('MONGODB_URI')
+    if not MONGO_URI:
+        print("ERROR: Please set the MONGODB_URI environment variable.")
+        sys.exit(1)
     client = MongoClient(MONGO_URI)
     db = client['rainfall-data']
     collection = db['rainfalldatas']

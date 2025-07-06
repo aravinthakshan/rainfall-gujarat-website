@@ -24,6 +24,9 @@ export async function POST(request: NextRequest) {
     // Hash the password using SHA-256
     const hashedPassword = crypto.createHash('sha256').update(password).digest('hex');
 
+    // Debug print
+    console.log("AUTH DEBUG", { email, password, hashedPassword });
+
     const user = await collection.findOne({ email, password: hashedPassword });
     if (user) {
       return NextResponse.json({ success: true });

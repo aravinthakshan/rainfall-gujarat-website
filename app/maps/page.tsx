@@ -564,23 +564,23 @@ function MapsPage() {
     // Prepare all warning boxes in order
     const warningBoxes = [
       ...warnings.high.map((station, idx) => (
-        <span key={`high-${station}-${idx}`} className="bg-red-700 text-white font-semibold rounded-lg px-3 py-1 mr-4 inline-block shadow">
+        <span key={`high-${station}-${idx}`} className="bg-red-700 text-white dark:bg-red-800 dark:text-white font-semibold rounded-lg px-3 py-1 mr-4 inline-block shadow">
           High Alert: {station}
         </span>
       )),
       ...warnings.med.map((station, idx) => (
-        <span key={`med-${station}-${idx}`} className="bg-orange-600 text-white font-semibold rounded-lg px-3 py-1 mr-4 inline-block shadow">
+        <span key={`med-${station}-${idx}`} className="bg-orange-600 text-white dark:bg-orange-700 dark:text-white font-semibold rounded-lg px-3 py-1 mr-4 inline-block shadow">
           Alert: {station}
         </span>
       )),
       ...warnings.low.map((station, idx) => (
-        <span key={`low-${station}-${idx}`} className="bg-yellow-500 text-black font-semibold rounded-lg px-3 py-1 mr-4 inline-block shadow">
+        <span key={`low-${station}-${idx}`} className="bg-yellow-500 text-black dark:bg-yellow-600 dark:text-black font-semibold rounded-lg px-3 py-1 mr-4 inline-block shadow">
           Warning: {station}
         </span>
       )),
     ];
     return (
-      <div className="overflow-hidden whitespace-nowrap w-full bg-black rounded py-2 px-4 mb-2">
+      <div className="overflow-hidden whitespace-nowrap w-full bg-white dark:bg-black bg-opacity-90 dark:bg-opacity-90 rounded py-2 px-4 mb-2">
         <div
           style={{
             display: 'inline-block',
@@ -644,8 +644,8 @@ function MapsPage() {
 
             {/* Map and Time Series Side by Side */}
             <div className="flex flex-col lg:flex-row w-full gap-4 items-stretch">
-              <div className="lg:w-1/2 h-[500px] lg:h-[calc(100vh-260px)]">
-                <div className="h-full relative border rounded bg-card">
+              <div className="lg:w-1/2 h-[500px] lg:h-[calc(100vh-260px)] flex flex-col">
+                <div className="flex-1 h-full relative border rounded bg-card">
                   {geojson ? (
                     <MapViewWithClick 
                       key={`${selectedDate}-${selectedMetric}`}
@@ -678,7 +678,7 @@ function MapsPage() {
                   </div>
                 </div>
               </div>
-              <div className="lg:w-1/2">
+              <div className="lg:w-1/2 flex flex-col h-[500px] lg:h-[calc(100vh-260px)]">
                 {selectedTehsil && allCsvData[selectedTehsil] ? (
                   <InteractiveRainfallChart
                     data={availableDates.map(date => ({
@@ -739,8 +739,8 @@ function MapsPage() {
             </div>
             {reservoirWarningMarquee}
             <div className="flex flex-col lg:flex-row w-full gap-4 items-stretch">
-              <div className="lg:w-1/2 h-[500px] lg:h-[calc(100vh-260px)]">
-                <div className="h-full relative border rounded bg-card">
+              <div className="lg:w-1/2 h-[500px] lg:h-[calc(100vh-260px)] flex flex-col">
+                <div className="flex-1 h-full relative border rounded bg-card">
                   {reservoirGeojson && reservoirData.length > 0 && geojson ? (
                     <ReservoirMap
                       geojson={reservoirGeojson}
@@ -768,8 +768,7 @@ function MapsPage() {
                   </div>
                 </div>
               </div>
-              {/* Right column: meta data above chart, stretch to match map height */}
-              <div className="lg:w-1/2 flex flex-col gap-6 h-full">
+              <div className="lg:w-1/2 flex flex-col gap-6 h-[500px] lg:h-[calc(100vh-260px)]">
                 {selectedReservoirName && reservoirTimeSeries.length > 0 ? (
                   <>
                     <div className="flex flex-col h-full">

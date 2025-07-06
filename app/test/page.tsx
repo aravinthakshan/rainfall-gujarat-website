@@ -50,6 +50,8 @@ const TestPage: React.FC = () => {
   const [geojsonStatus, setGeojsonStatus] = useState<GeoJsonStatus>({ status: 'loading' })
   const [matchingAnalysis, setMatchingAnalysis] = useState<MatchingAnalysis | null>(null)
   const [overallStatus, setOverallStatus] = useState<'loading' | 'success' | 'error'>('loading')
+  const [rainfallData, setRainfallData] = useState<any[]>([])
+  const [rainfallError, setRainfallError] = useState<string | null>(null)
 
   // Fetch CSV file list from API on mount
   useEffect(() => {
@@ -199,6 +201,22 @@ const TestPage: React.FC = () => {
       setOverallStatus('success')
     }
   }, [csvFiles, geojsonStatus])
+
+  // Fetch rainfall data from MongoDB
+  useEffect(() => {
+    fetch('/api/rainfall-data')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setRainfallData(data.slice(0, 5))
+        } else if (data.error) {
+          setRainfallError(data.error)
+        } else {
+          setRainfallError('Unexpected response')
+        }
+      })
+      .catch(err => setRainfallError(err.message))
+  }, [])
 
   const getStatusIcon = (status: 'success' | 'error' | 'loading') => {
     switch (status) {
@@ -451,6 +469,47 @@ const TestPage: React.FC = () => {
                 </Alert>
               )}
             </div>
+          </CardContent>
+        </Card>
+
+        {/* MongoDB Rainfall Data Retrieval Test */}
+        <Card>
+          <CardHeader>
+            <CardTitle>MongoDB Rainfall Data Retrieval Test</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {rainfallError ? (
+              <Alert variant="destructive">
+                <AlertDescription>
+                  <XCircle className="inline mr-2 text-red-500" />
+                  MongoDB retrieval failed: {rainfallError}
+                </AlertDescription>
+              </Alert>
+            ) : rainfallData.length > 0 ? (
+              <div>
+                <div className="mb-2 text-sm text-muted-foreground">Showing first 5 records from /api/rainfall-data</div>
+                <table className="min-w-full text-xs border">
+                  <thead>
+                    <tr>
+                      {Object.keys(rainfallData[0]).map(key => (
+                        <th key={key} className="border px-2 py-1">{key}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {rainfallData.map((row, i) => (
+                      <tr key={i}>
+                        {Object.values(row).map((val, j) => (
+                          <td key={j} className="border px-2 py-1">{String(val)}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-muted-foreground">Loading rainfall data from MongoDB...</div>
+            )}
           </CardContent>
         </Card>
       </div>

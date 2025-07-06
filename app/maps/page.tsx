@@ -293,6 +293,7 @@ function MapsPage() {
   const [loading, setLoading] = useState(true)
   const [reservoirGeojson, setReservoirGeojson] = useState<any>(null);
   const [reservoirData, setReservoirData] = useState<any[]>([]);
+  const [allReservoirData, setAllReservoirData] = useState<any[]>([]);
   const [reservoirAvailableDates, setReservoirAvailableDates] = useState<string[]>([]);
   const [selectedReservoirDate, setSelectedReservoirDate] = useState<string>("");
   const [selectedReservoirMetric, setSelectedReservoirMetric] = useState<string>("PercentageFilling");
@@ -492,6 +493,14 @@ function MapsPage() {
       });
   }, [selectedReservoirName]);
 
+  // Fetch all reservoir data once for marquee
+  useEffect(() => {
+    fetch('/api/reservoir-data')
+      .then(res => res.json())
+      .then(setAllReservoirData)
+      .catch(console.error);
+  }, []);
+
   // Helper: get value for a tehsil
   function getTehsilValue(tehsil: string) {
     const row: CsvRow | undefined = csvData.find((r: CsvRow) => r.taluka?.toLowerCase() === tehsil?.toLowerCase())
@@ -540,9 +549,17 @@ function MapsPage() {
         }))
     : []
 
-  // Reservoir warning marquee node
-  const reservoirWarningMarquee = (reservoirData.length > 0 ? (() => {
-    const warnings = getReservoirWarningStations(reservoirData);
+  // Find the most recent reservoir data for the marquee
+  const latestReservoirData = React.useMemo(() => {
+    if (!reservoirAvailableDates.length) return [];
+    const latestDate = reservoirAvailableDates[reservoirAvailableDates.length - 1];
+    // Find all data for the latest date from the full allReservoirData set
+    return allReservoirData.filter(row => row.date === latestDate);
+  }, [reservoirAvailableDates, allReservoirData]);
+
+  // Reservoir warning marquee node (always for most recent day)
+  const reservoirWarningMarquee = (latestReservoirData.length > 0 ? (() => {
+    const warnings = getReservoirWarningStations(latestReservoirData);
     if (!warnings.high.length && !warnings.med.length && !warnings.low.length) return null;
     // Prepare all warning boxes in order
     const warningBoxes = [

@@ -720,7 +720,16 @@ const MapsPage: React.FC = () => {
                               <div className="flex"><span className="font-semibold pr-2">District:</span> <span>{reservoirMetaData["District"]}</span></div>
                               <div className="flex"><span className="font-semibold pr-2">Taluka:</span> <span>{reservoirMetaData["Taluka"]}</span></div>
                               <div className="flex"><span className="font-semibold pr-2">Name of Schemes:</span> <span>{reservoirMetaData["Name of Schemes"]}</span></div>
-                              <div className="flex"><span className="font-semibold pr-2">Type:</span> <span>{reservoirMetaData["Type (Gated/Ungated/FuseGate)"]}</span></div>
+                              <div className="flex"><span className="font-semibold pr-2">Type:</span> <span>{
+                                (() => {
+                                  const typeVal = reservoirMetaData["Type (Gated/Ungated/FuseGate)"]?.trim();
+                                  if (!typeVal) return "-";
+                                  if (typeVal === "G") return "Gated";
+                                  if (typeVal === "UG") return "Ungated";
+                                  if (typeVal === "FG") return "FuseGate";
+                                  return typeVal; // fallback to original if not matched
+                                })()
+                              }</span></div>
                               <div className="flex"><span className="font-semibold pr-2">Overflow Spillway Level (m):</span> <span>{reservoirMetaData["Overflow Spillway Level (m)"]}</span></div>
                               <div className="flex"><span className="font-semibold pr-2">Full Reservoir Level (m):</span> <span>{reservoirMetaData["Full Reservoi Level (m)"]}</span></div>
                               <div className="flex"><span className="font-semibold pr-2">Gross Storage (MCM):</span> <span>{reservoirMetaData["Gross Storage (MCM)"]}</span></div>

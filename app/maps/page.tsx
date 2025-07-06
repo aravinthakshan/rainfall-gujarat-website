@@ -683,7 +683,7 @@ const MapsPage: React.FC = () => {
                       boundaryGeojson={geojson}
                       reservoirData={reservoirData}
                       getColor={getReservoirColor}
-                      selectedMetric={selectedReservoirMetric}
+                      selectedMetric={"PercentageFilling"}
                       selectedDate={selectedReservoirDate}
                       onReservoirClick={setSelectedReservoirName}
                     />

@@ -40,7 +40,11 @@ export function CalendarDatePicker({
         const [day, month, year] = dateStr.split('/').map(Number)
         return new Date(year, month - 1, day) // month is 0-indexed
       }
-      
+      // Parse date string like "16.06.2025" to Date object (dot format)
+      if (dateStr.includes('.')) {
+        const [day, month, year] = dateStr.split('.').map(Number)
+        return new Date(year, month - 1, day)
+      }
       // Parse date string like "16th June 2025" to Date object (legacy format)
       const match = dateStr.match(/(\d+)(st|nd|rd|th)\s+(June)\s+(\d{4})/)
       if (match) {
@@ -49,12 +53,10 @@ export function CalendarDatePicker({
         const year = parseInt(match[4], 10)
         return new Date(year, month, day)
       }
-      
       // Parse date string like "2025-06-05" to Date object (legacy format)
       if (dateStr.includes('-')) {
         return new Date(dateStr)
       }
-      
       return new Date()
     }).filter(date => !isNaN(date.getTime()))
   }, [availableDates])

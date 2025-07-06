@@ -146,7 +146,7 @@ export default function InteractiveRainfallChart({
           </div>
         </CardHeader>
         <CardContent className="pb-2">
-          <div className="h-[400px] w-full">
+          <div className="h-[300px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart
                 data={visibleData}
@@ -176,6 +176,7 @@ export default function InteractiveRainfallChart({
                     position: "insideLeft",
                     style: { textAnchor: "middle", fill: "#94a3b8" },
                   }}
+                  tickFormatter={(value) => Math.round(value).toString()}
                 />
                 <Tooltip content={<CustomTooltip />} />
                 <Line
@@ -207,16 +208,9 @@ export default function InteractiveRainfallChart({
       {/* Timeline Scrubber */}
       <Card className="bg-slate-900 border-slate-700">
         <CardContent className="pt-4 pb-4">
-          <div className="h-[100px]">
+          <div className="h-[60px]">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data} margin={{ top: 5, right: 5, left: 5, bottom: 5 }}>
-                <Line 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke={color} 
-                  strokeWidth={1} 
-                  dot={false} 
-                />
                 <Brush
                   dataKey="formattedDate"
                   height={30}

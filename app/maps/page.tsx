@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { MapPin, Droplets, Database } from "lucide-react"
+import { MapPin, Droplets, Database, AlertTriangle } from "lucide-react"
 import dynamic from "next/dynamic"
 import "leaflet/dist/leaflet.css"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
@@ -11,6 +11,7 @@ import InteractiveRainfallChart from "@/components/InteractiveRainfallChart"
 import { CalendarDatePicker } from "@/components/ui/calendar-date-picker"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import ReservoirMap from "@/components/ReservoirMap"
+import Papa from "papaparse"
 
 // Format date label from database format (e.g., "01/06/2025" -> "01/06/2025")
 function formatDateLabel(dateString: string) {
@@ -272,8 +273,7 @@ function getReservoirWarningStations(reservoirData: any[]) {
   const med = [];
   const low = [];
   for (const row of reservoirData) {
-    let val = row["PercentageFilling %"];
-    if (typeof val === "string" && val.includes("%")) val = val.replace("%", "");
+    let val = row["PercentageFilling"];
     val = Number(val);
     if (isNaN(val)) continue;
     if (val > 90) high.push(row["Name of Schemes"]);
@@ -301,6 +301,7 @@ const MapsPage: React.FC = () => {
   const [reservoirLoading, setReservoirLoading] = useState(false);
   const [selectedReservoirName, setSelectedReservoirName] = useState<string | null>(null);
   const [reservoirTimeSeries, setReservoirTimeSeries] = useState<any[]>([]);
+  const [reservoirMetaData, setReservoirMetaData] = useState<any | null>(null);
 
   // Load available dates from MongoDB
   useEffect(() => {
@@ -452,7 +453,7 @@ const MapsPage: React.FC = () => {
         const filtered = data.filter(row => row["Name of Schemes"]?.toLowerCase() === selectedReservoirName.toLowerCase());
         const series = filtered.map(row => ({
           date: row.date,
-          timestamp: new Date(row.date).getTime(),
+          timestamp: parseDateFromString(row.date).getTime(),
           value: Number(row[selectedReservoirMetric]) || 0,
           formattedDate: row.date,
         })).sort((a, b) => a.timestamp - b.timestamp);
@@ -474,6 +475,24 @@ const MapsPage: React.FC = () => {
       setSelectedReservoirName(maxReservoir);
     }
   }, [reservoirData, selectedReservoirMetric]);
+
+  // Load metadata CSV and update when selectedReservoirName changes
+  useEffect(() => {
+    if (!selectedReservoirName) {
+      setReservoirMetaData(null);
+      return;
+    }
+    fetch("/Metadata.csv")
+      .then(res => res.text())
+      .then(csvText => {
+        const parsed = Papa.parse(csvText, { header: true });
+        if (!parsed.data || !Array.isArray(parsed.data)) return;
+        const match = parsed.data.find((row: any) =>
+          row["Name of Schemes"]?.toLowerCase().trim() === selectedReservoirName.toLowerCase().trim()
+        );
+        setReservoirMetaData(match || null);
+      });
+  }, [selectedReservoirName]);
 
   // Helper: get value for a tehsil
   function getTehsilValue(tehsil: string) {
@@ -515,10 +534,12 @@ const MapsPage: React.FC = () => {
 
   // Time series data for selected tehsil
   const timeSeries = selectedTehsil && allCsvData[selectedTehsil]
-    ? availableDates.map(date => ({
-        date: formatDateLabel(date), // Use the date string directly
-        value: allCsvData[selectedTehsil]?.[date] ?? 0,
-      }))
+    ? [...availableDates]
+        .sort((a, b) => parseDateFromString(a).getTime() - parseDateFromString(b).getTime())
+        .map(date => ({
+          date: formatDateLabel(date),
+          value: allCsvData[selectedTehsil]?.[date] ?? 0,
+        }))
     : []
 
   return (
@@ -553,7 +574,7 @@ const MapsPage: React.FC = () => {
             </div>
 
             {/* Map and Time Series Side by Side */}
-            <div className="flex flex-col lg:flex-row w-full gap-4">
+            <div className="flex flex-col lg:flex-row w-full gap-4 items-stretch">
               <div className="lg:w-1/2 h-[500px] lg:h-[calc(100vh-260px)]">
                 <div className="h-full relative border rounded bg-white dark:bg-slate-900">
                   {geojson ? (
@@ -639,36 +660,7 @@ const MapsPage: React.FC = () => {
                 Reservoir storage and water level data across Gujarat
               </p>
             </div>
-            <div className="flex gap-2 mb-4 items-center">
-            </div>
-            {/* Scrolling warning sign for high PercentageFilling % stations */}
-            {reservoirData.length > 0 && (() => {
-              const { high, med, low } = getReservoirWarningStations(reservoirData);
-              if (high.length === 0 && med.length === 0 && low.length === 0) return null;
-              return (
-                <div style={{ background: '#fffbe6', borderBottom: '2px solid #facc15', padding: '8px 0', marginBottom: 12, overflow: 'hidden', whiteSpace: 'nowrap' }}>
-                  <div
-                    style={{
-                      display: 'inline-block',
-                      animation: 'scroll-left 20s linear infinite',
-                      fontWeight: 600,
-                      fontSize: 16,
-                    }}
-                  >
-                    {high.length > 0 && <span style={{ color: '#dc2626', marginRight: 24 }}>HIGH (&gt;90%): {high.join(', ')}</span>}
-                    {med.length > 0 && <span style={{ color: '#f59e42', marginRight: 24 }}>ALERT (80-90%): {med.join(', ')}</span>}
-                    {low.length > 0 && <span style={{ color: '#facc15' }}>WARNING (70-80%): {low.join(', ')}</span>}
-                  </div>
-                  <style>{`
-                    @keyframes scroll-left {
-                      0% { transform: translateX(100%); }
-                      100% { transform: translateX(-100%); }
-                    }
-                  `}</style>
-                </div>
-              );
-            })()}
-            <div className="flex flex-col lg:flex-row w-full gap-4">
+            <div className="flex flex-col lg:flex-row w-full gap-4 items-stretch">
               <div className="lg:w-1/2 h-[500px] lg:h-[calc(100vh-260px)]">
                 <div className="h-full relative border rounded bg-white dark:bg-slate-900">
                   {reservoirGeojson && reservoirData.length > 0 && geojson ? (
@@ -700,39 +692,65 @@ const MapsPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-              <div className="lg:w-1/2">
+              {/* Right column: chart and meta data stacked, stretch to match map height */}
+              <div className="lg:w-1/2 flex flex-col gap-6 h-full">
                 {selectedReservoirName && reservoirTimeSeries.length > 0 ? (
-                  <InteractiveRainfallChart
-                    data={reservoirTimeSeries}
-                    title={`${selectedReservoirName.charAt(0).toUpperCase() + selectedReservoirName.slice(1)} - ${reservoirMetricOptions.find(m => m.value === selectedReservoirMetric)?.label}`}
-                    yAxisLabel={reservoirMetricOptions.find(m => m.value === selectedReservoirMetric)?.label || "Value"}
-                    color="#60a5fa"
-                  >
-                    <CalendarDatePicker
-                      selectedDate={selectedReservoirDate ? parseDateFromString(selectedReservoirDate) : undefined}
-                      onDateChange={date => {
-                        if (date) {
-                          // Convert Date to DD/MM/YYYY string
-                          const day = date.getDate().toString().padStart(2, '0');
-                          const month = (date.getMonth() + 1).toString().padStart(2, '0');
-                          const year = date.getFullYear();
-                          const dateString = `${day}/${month}/${year}`;
-                          setSelectedReservoirDate(dateString);
-                        }
-                      }}
-                      availableDates={reservoirAvailableDates}
-                      disabled={reservoirLoading}
-                    />
-                    <select
-                      className="flex h-10 w-[240px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      value={selectedReservoirMetric}
-                      onChange={e => setSelectedReservoirMetric(e.target.value)}
-                    >
-                      {reservoirMetricOptions.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                  </InteractiveRainfallChart>
+                  <>
+                    <div className="flex flex-col h-full">
+                      <div className="flex-1 flex flex-col">
+                        <InteractiveRainfallChart
+                          data={reservoirTimeSeries}
+                          title={`${selectedReservoirName.charAt(0).toUpperCase() + selectedReservoirName.slice(1)} - ${reservoirMetricOptions.find(m => m.value === selectedReservoirMetric)?.label}`}
+                          yAxisLabel={reservoirMetricOptions.find(m => m.value === selectedReservoirMetric)?.label || "Value"}
+                          color="#60a5fa"
+                        >
+                          <CalendarDatePicker
+                            selectedDate={selectedReservoirDate ? parseDateFromString(selectedReservoirDate) : undefined}
+                            onDateChange={date => {
+                              if (date) {
+                                // Convert Date to DD/MM/YYYY string
+                                const day = date.getDate().toString().padStart(2, '0');
+                                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                                const year = date.getFullYear();
+                                const dateString = `${day}/${month}/${year}`;
+                                setSelectedReservoirDate(dateString);
+                              }
+                            }}
+                            availableDates={reservoirAvailableDates}
+                            disabled={reservoirLoading}
+                          />
+                          <select
+                            className="flex h-10 w-[240px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                            value={selectedReservoirMetric}
+                            onChange={e => setSelectedReservoirMetric(e.target.value)}
+                          >
+                            {reservoirMetricOptions.map(opt => (
+                              <option key={opt.value} value={opt.value}>{opt.label}</option>
+                            ))}
+                          </select>
+                        </InteractiveRainfallChart>
+                      </div>
+                      {/* Meta Data Card at the bottom, does not shrink */}
+                      {selectedReservoirName && reservoirMetaData && (
+                        <div className="mt-0 w-full flex-shrink-0">
+                          <h4 className="text-lg font-bold mb-2">Meta Data</h4>
+                          <div className="bg-white rounded-lg shadow p-4 border w-full">
+                            <div className="grid grid-cols-3 gap-x-8 gap-y-2 w-full">
+                              <div className="flex"><span className="font-semibold pr-2">District:</span> <span>{reservoirMetaData["District"]}</span></div>
+                              <div className="flex"><span className="font-semibold pr-2">Taluka:</span> <span>{reservoirMetaData["Taluka"]}</span></div>
+                              <div className="flex"><span className="font-semibold pr-2">Name of Schemes:</span> <span>{reservoirMetaData["Name of Schemes"]}</span></div>
+                              <div className="flex"><span className="font-semibold pr-2">Type:</span> <span>{reservoirMetaData["Type (Gated/Ungated/FuseGate)"]}</span></div>
+                              <div className="flex"><span className="font-semibold pr-2">Overflow Spillway Level (m):</span> <span>{reservoirMetaData["Overflow Spillway Level (m)"]}</span></div>
+                              <div className="flex"><span className="font-semibold pr-2">Full Reservoir Level (m):</span> <span>{reservoirMetaData["Full Reservoi Level (m)"]}</span></div>
+                              <div className="flex"><span className="font-semibold pr-2">Gross Storage (MCM):</span> <span>{reservoirMetaData["Gross Storage (MCM)"]}</span></div>
+                              <div className="flex"><span className="font-semibold pr-2">Live Storage (MCM):</span> <span>{reservoirMetaData["Live Storage (MCM)"]}</span></div>
+                              <div className="flex"><span className="font-semibold pr-2">Dead Storage (MCM):</span> <span>{reservoirMetaData["Dead Storage (MCM)"]}</span></div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </>
                 ) : (
                   <div className="h-[500px] lg:h-[calc(100vh-260px)] border rounded bg-white dark:bg-slate-900 flex items-center justify-center">
                     <div className="text-center">

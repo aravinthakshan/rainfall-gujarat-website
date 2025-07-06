@@ -28,6 +28,7 @@ async function getMarkdownPosts() {
       date: data.date || null,
       tags: data.tags || [],
       excerpt,
+      image: data.image || null,
     }
   })
 }
@@ -35,81 +36,54 @@ async function getMarkdownPosts() {
 export default async function BlogPage() {
   const markdownPosts = await getMarkdownPosts()
   return (
-    <div className="min-h-screen bg-background">
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-4xl mx-auto px-6 py-8">
-          <h1 className="text-3xl font-light text-gray-900">Blog</h1>
+    <div className="min-h-screen bg-gray-50">
+      {/* Header */}
+      <div className="bg-white border-b border-gray-200">
+        <div className="max-w-6xl px-6 py-8">
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Blog</h1>
           <p className="text-gray-600 mt-2">Insights and stories from the Water & Climate Lab</p>
         </div>
-      </header>
-      <main className="max-w-4xl mx-auto px-6 py-12">
-        <div className="space-y-8">
+      </div>
+      <main className="max-w-6xl mx-auto px-6 py-12">
+        {/* Tiling grid layout for blog posts */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-2 lg:grid-cols-2 gap-8">
           {/* Case Study as first blog post */}
-          <Card className="border-gray-200 hover:shadow-md transition-shadow">
-            <CardHeader>
-              <div className="flex justify-between items-start">
-                <CardTitle className="text-xl font-medium text-gray-900 hover:text-gray-700">
-                  <Link href="/blog/saurashtra-floods-2025">
-                    Saurashtra Submerged: A Wake-Up Call from the June 2025 Floods
-                  </Link>
-                </CardTitle>
-                <time className="text-sm text-gray-500 whitespace-nowrap ml-4">
-                  June 17, 2025
-                </time>
+          <Link href="/blog/saurashtra-floods-2025" className="group block">
+            <div className="rounded-lg overflow-hidden shadow hover:shadow-lg transition-shadow bg-white min-w-[340px]">
+              <div className="relative h-64 bg-gray-100">
+                <Image
+                  src="/Rainfall_map.jpg"
+                  alt="Saurashtra Floods 2025"
+                  fill
+                  className="object-cover group-hover:scale-105 transition-transform duration-200"
+                />
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col md:flex-row gap-4">
-                <div className="flex-shrink-0 w-full md:w-64 h-40 relative">
+              <div className="p-6">
+                <h2 className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors text-center">
+                  Saurashtra Submerged: A Wake-Up Call from the June 2025 Floods
+                </h2>
+              </div>
+            </div>
+          </Link>
+          {/* Dynamically list markdown blog posts */}
+          {markdownPosts.map((post, index) => (
+            <Link key={post.slug} href={`/blog/${post.slug}`} className="group block">
+              <div className="rounded-lg overflow-hidden shadow hover:shadow-lg transition-shadow bg-white min-w-[340px]">
+                <div className="relative h-64 bg-gray-100">
                   <Image
-                    src="/Rainfall_map.jpg"
-                    alt="Saurashtra Floods 2025"
+                    src={post.image || `/placeholder-${(index % 5) + 1}.jpg`}
+                    alt={post.title}
                     fill
-                    className="object-cover rounded"
+                    className="object-cover group-hover:scale-105 transition-transform duration-200"
                   />
                 </div>
-                <div className="flex-1 flex flex-col justify-between">
-                  <p className="text-gray-600 mb-4">
-                    A detailed case study of the devastating June 2025 floods in Saurashtra, Gujarat, with maps, rainfall data, and satellite imagery.
-                  </p>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge variant="secondary" className="bg-gray-100 text-gray-700 hover:bg-gray-200">Floods</Badge>
-                    <Badge variant="secondary" className="bg-gray-100 text-gray-700 hover:bg-gray-200">Case Study</Badge>
-                  </div>
+                <div className="p-6">
+                  <h2 className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors text-center">
+                    {post.title}
+                  </h2>
                 </div>
               </div>
-            </CardContent>
-          </Card>
-          {/* Dynamically list markdown blog posts */}
-          {markdownPosts.map(post => (
-            <Card key={post.slug} className="border-gray-200 hover:shadow-md transition-shadow">
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-xl font-medium text-gray-900 hover:text-gray-700">
-                    <Link href={`/blog/${post.slug}`}>{post.title}</Link>
-                  </CardTitle>
-                  {post.date && (
-                    <time className="text-sm text-gray-500 whitespace-nowrap ml-4">
-                      {new Date(post.date).toLocaleDateString("en-US", {
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                      })}
-                    </time>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                <p className="text-gray-600 mb-4">{post.excerpt}</p>
-                <div className="flex flex-wrap gap-2">
-                  {Array.isArray(post.tags) && post.tags.map((tag: string) => (
-                    <Badge key={tag} variant="secondary" className="bg-gray-100 text-gray-700 hover:bg-gray-200">
-                      {tag}
-                    </Badge>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+            </Link>
           ))}
         </div>
       </main>

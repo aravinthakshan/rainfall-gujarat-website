@@ -22,6 +22,8 @@ export default function AdminDashboard() {
   const [isUploading, setIsUploading] = useState(false)
   const { isAuthenticated, logout } = useAuth()
   const router = useRouter()
+  const [csvFile, setCsvFile] = useState<File | null>(null)
+  const [csvDate, setCsvDate] = useState<Date | undefined>(undefined)
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -104,7 +106,7 @@ export default function AdminDashboard() {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-light text-gray-900">Admin Dashboard</h1>
-              <p className="text-gray-600 mt-1">Manage blog posts and rainfall data uploads</p>
+              <p className="text-gray-600 mt-1">Manage rainfall and reservoir data uploads</p>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -126,63 +128,17 @@ export default function AdminDashboard() {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-8">
-        <Tabs defaultValue="posts" className="space-y-6">
+        <Tabs defaultValue="pdf" className="space-y-6">
           <TabsList className="grid w-full grid-cols-2 max-w-md">
-            <TabsTrigger value="posts" className="flex items-center gap-2">
-              <FileText className="w-4 h-4" />
-              Blog Posts
-            </TabsTrigger>
             <TabsTrigger value="pdf" className="flex items-center gap-2">
               <FilePdf className="w-4 h-4" />
-              PDF Upload
+              Rainfall PDF Upload
+            </TabsTrigger>
+            <TabsTrigger value="reservoir-csv" className="flex items-center gap-2">
+              <Upload className="w-4 h-4" />
+              Reservoir CSV Upload
             </TabsTrigger>
           </TabsList>
-
-          <TabsContent value="posts">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-lg font-medium">
-                  <Upload className="w-5 h-5" />
-                  Upload New Post
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <form onSubmit={handleMarkdownSubmit} className="space-y-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="markdown">Markdown File</Label>
-                    <Input
-                      id="markdown"
-                      type="file"
-                      accept=".md,.markdown"
-                      onChange={(e) => setMarkdownFile(e.target.files?.[0] || null)}
-                      className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
-                    />
-                  </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="images">Supporting Images (optional)</Label>
-                    <Input
-                      id="images"
-                      type="file"
-                      accept="image/*"
-                      multiple
-                      onChange={(e) => setImages(e.target.files)}
-                      className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
-                    />
-                    <p className="text-sm text-gray-500">Upload images that are referenced in your markdown file</p>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    disabled={!markdownFile || isUploading}
-                    className="bg-gray-900 hover:bg-gray-800"
-                  >
-                    {isUploading ? "Uploading..." : "Upload Post"}
-                  </Button>
-                </form>
-              </CardContent>
-            </Card>
-          </TabsContent>
 
           <TabsContent value="pdf">
             <Card>
@@ -217,7 +173,7 @@ export default function AdminDashboard() {
                     <CalendarDatePicker
                       selectedDate={pdfDate}
                       onDateChange={setPdfDate}
-                      availableDates={[]} // Empty array since this is for selecting new dates
+                      availableDates={[]}
                       allowAnyDate={true}
                       className="max-w-xs"
                     />
@@ -230,6 +186,52 @@ export default function AdminDashboard() {
                     className="bg-gray-900 hover:bg-gray-800"
                   >
                     {isUploading ? "Processing..." : "Upload PDF to Database"}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="reservoir-csv">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-lg font-medium">
+                  <Upload className="w-5 h-5" />
+                  Reservoir CSV Upload
+                </CardTitle>
+                <p className="text-sm text-gray-600 mt-2">
+                  Upload a CSV file containing reservoir metadata. (This is a placeholder, logic not implemented yet.)
+                </p>
+              </CardHeader>
+              <CardContent>
+                <form className="space-y-6">
+                  <div className="space-y-2">
+                    <Label htmlFor="reservoir-csv">CSV File</Label>
+                    <Input
+                      id="reservoir-csv"
+                      type="file"
+                      accept=".csv"
+                      onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+                      className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                    />
+                    <p className="text-sm text-gray-500">Upload a CSV file with reservoir data. (No backend logic yet.)</p>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="csv-date" className="flex items-center gap-2">
+                      <Calendar className="w-4 h-4" />
+                      Report Date
+                    </Label>
+                    <CalendarDatePicker
+                      selectedDate={csvDate}
+                      onDateChange={setCsvDate}
+                      availableDates={[]}
+                      allowAnyDate={true}
+                      className="max-w-xs"
+                    />
+                    <p className="text-sm text-gray-500">The date this reservoir CSV represents</p>
+                  </div>
+                  <Button type="button" disabled className="bg-gray-400 cursor-not-allowed">
+                    Upload CSV (Coming Soon)
                   </Button>
                 </form>
               </CardContent>

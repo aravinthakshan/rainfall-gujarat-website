@@ -24,13 +24,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const login = async (email: string, password: string): Promise<boolean> => {
-    // Simple hardcoded credentials - replace with real authentication
-    if (email === "admin@research.com" && password === "research123") {
-      setIsAuthenticated(true)
-      localStorage.setItem("admin-auth", "true")
-      return true
+    // Call backend API for authentication
+    try {
+      const res = await fetch("/api/auth", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setIsAuthenticated(true);
+        localStorage.setItem("admin-auth", "true");
+        return true;
+      }
+      return false;
+    } catch (err) {
+      return false;
     }
-    return false
   }
 
   const logout = () => {

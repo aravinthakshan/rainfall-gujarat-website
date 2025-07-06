@@ -106,12 +106,6 @@ export default function AdminLogin() {
                 {isLoading ? "Signing in..." : "Sign In"}
               </Button>
             </form>
-
-            <div className="mt-6 p-4 bg-muted rounded-md">
-              <p className="text-sm text-muted-foreground font-medium mb-2">Demo Credentials:</p>
-              <p className="text-xs text-muted-foreground">Email: admin@research.com</p>
-              <p className="text-xs text-muted-foreground">Password: research123</p>
-            </div>
           </CardContent>
         </Card>
       </div>

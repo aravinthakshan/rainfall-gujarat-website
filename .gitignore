@@ -2,7 +2,7 @@
 
 # dependencies
 /node_modules
-
+python-scripts/insert_admin_user.py
 # next.js
 /.next/
 /out/

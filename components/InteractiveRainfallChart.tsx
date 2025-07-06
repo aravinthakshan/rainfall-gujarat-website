@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useRef } from "react"
 import { Line, LineChart, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Brush, ReferenceLine, Tooltip } from "recharts"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 
@@ -59,6 +59,9 @@ export default function InteractiveRainfallChart({
 }: InteractiveRainfallChartProps) {
   const [brushRange, setBrushRange] = useState<[number, number]>([0, data.length - 1])
   const [hoveredPoint, setHoveredPoint] = useState<string | null>(null)
+  const prevDataRef = useRef<any[]>([])
+  const prevSelectedDateRef = useRef<string | undefined>()
+  const chartRef = useRef<HTMLDivElement>(null)
 
   // Calculate brush range to show last 10 data points by default
   const defaultBrushRange: [number, number] = useMemo(() => {
@@ -113,20 +116,24 @@ export default function InteractiveRainfallChart({
     )
   }
 
+  // Calculate visible data and Y domain
   const visibleData = data.slice(brushRange[0], brushRange[1] + 1)
   const maxValue = Math.max(...data.map(d => d.value))
   const minValue = Math.min(...data.map(d => d.value))
-  const yDomain = [Math.max(0, minValue - (maxValue - minValue) * 0.1), maxValue + (maxValue - minValue) * 0.1]
+  let yDomain: [number, number] = [0, Math.max(1, ...data.map(d => d.value))]
+  if (minValue === 0 && maxValue === 0) {
+    yDomain = [0, 1]
+  }
 
   return (
-    <div className="w-full space-y-4">
+    <div className="w-full space-y-4 relative">
       {/* Controls above the chart */}
       {children && (
         <div className="flex gap-2 items-center">
           {children}
         </div>
       )}
-      <Card className="bg-card border-border">
+      <Card className="bg-card border-border relative">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div>
@@ -191,6 +198,7 @@ export default function InteractiveRainfallChart({
                     stroke: "#0891b2", 
                     strokeWidth: 2
                   }}
+                  isAnimationActive={false}
                 />
                 {selectedDate && (
                   <ReferenceLine 

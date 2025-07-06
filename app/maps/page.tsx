@@ -45,25 +45,23 @@ function parseDateFromString(dateString: string): Date {
   return new Date()
 }
 
-// Color bins and thresholds as per reference image
+// Color bins and thresholds for Rainfall Last 24 Hrs and % Against Avg
 const colorBins = [
-  { min: 0, max: 30, color: "#e3eef9" },
-  { min: 30, max: 60, color: "#c6dbef" },
-  { min: 60, max: 90, color: "#9ecae1" },
-  { min: 90, max: 120, color: "#6baed6" },
-  { min: 120, max: 150, color: "#4292c6" },
-  { min: 150, max: 180, color: "#2171b5" },
-  { min: 180, max: 210, color: "#08519c" },
-  { min: 210, max: 240, color: "#08306b" },
-  { min: 240, max: 270, color: "#05204a" },
-  { min: 270, max: 300, color: "#021024" },
-  { min: 300, max: Infinity, color: "#000c1a" },
+  { min: 0, max: 10, color: "#e3eef9" },
+  { min: 10, max: 20, color: "#c6dbef" },
+  { min: 20, max: 30, color: "#9ecae1" },
+  { min: 30, max: 40, color: "#6baed6" },
+  { min: 40, max: 50, color: "#4292c6" },
+  { min: 50, max: 60, color: "#2171b5" },
+  { min: 60, max: 70, color: "#08519c" },
+  { min: 70, max: 80, color: "#08306b" },
+  { min: 80, max: 90, color: "#05204a" },
+  { min: 90, max: 100, color: "#021024" },
+  { min: 100, max: Infinity, color: "#000c1a" },
 ]
 
 const metricOptions = [
-  { value: "rain_till_yesterday", label: "Rain till Yesterday" },
-  { value: "rain_last_24hrs", label: "Rain Last 24hrs" },
-  { value: "total_rainfall", label: "Total Rainfall" },
+  { value: "rain_last_24hrs", label: "Rainfall Last 24 Hrs" },
   { value: "percent_against_avg", label: "% Against Avg" },
 ]
 
@@ -286,7 +284,7 @@ function getReservoirWarningStations(reservoirData: any[]) {
 const MapsPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>("16th June")
   const [selectedDateObject, setSelectedDateObject] = useState<Date | undefined>(undefined)
-  const [selectedMetric, setSelectedMetric] = useState<string>("total_rainfall")
+  const [selectedMetric, setSelectedMetric] = useState<string>("rain_last_24hrs")
   const [csvData, setCsvData] = useState<CsvRow[]>([])
   const [geojson, setGeojson] = useState<GeoJson | null>(null)
   const [allCsvData, setAllCsvData] = useState<{ [tehsil: string]: { [date: string]: number } }>({})
@@ -463,10 +461,10 @@ const MapsPage: React.FC = () => {
 
   // Set default selected reservoir on data/metric change (like rainfall)
   useEffect(() => {
-    if (reservoirData.length > 0 && !selectedReservoirName) {
+    if (reservoirData.length > 0) {
       let maxReservoir = null, maxVal = -Infinity;
       reservoirData.forEach((row: any) => {
-        const val = Number(row[selectedReservoirMetric]);
+        const val = Number(row["PercentageFilling"]);
         if (val > maxVal) {
           maxVal = val;
           maxReservoir = row["Name of Schemes"];
@@ -474,7 +472,7 @@ const MapsPage: React.FC = () => {
       });
       setSelectedReservoirName(maxReservoir);
     }
-  }, [reservoirData, selectedReservoirMetric]);
+  }, [reservoirData]);
 
   // Load metadata CSV and update when selectedReservoirName changes
   useEffect(() => {
@@ -566,11 +564,19 @@ const MapsPage: React.FC = () => {
           </TabsList>
 
           <TabsContent value="rainfall" className="space-y-4">
-            <div className="mb-4">
-              <h3 className="text-xl font-semibold tracking-tight">Rainfall Map</h3>
-              <p className="text-muted-foreground">
-                Interactive map showing rainfall data across Gujarat
-              </p>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-semibold tracking-tight">Rainfall Map</h3>
+                <p className="text-muted-foreground">
+                  Interactive map showing rainfall data across Gujarat
+                </p>
+              </div>
+              <button
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow ml-4"
+                onClick={() => window.open('/path/to/information.pdf', '_blank')}
+              >
+                Information
+              </button>
             </div>
 
             {/* Map and Time Series Side by Side */}
@@ -654,11 +660,19 @@ const MapsPage: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="reservoir" className="space-y-4">
-            <div className="mb-4">
-              <h3 className="text-xl font-semibold tracking-tight">Reservoir Information</h3>
-              <p className="text-muted-foreground">
-                Reservoir storage and water level data across Gujarat
-              </p>
+            <div className="mb-4 flex items-center justify-between">
+              <div>
+                <h3 className="text-xl font-semibold tracking-tight">Reservoir Information</h3>
+                <p className="text-muted-foreground">
+                  Reservoir storage and water level data across Gujarat
+                </p>
+              </div>
+              <button
+                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow ml-4"
+                onClick={() => window.open('/path/to/information.pdf', '_blank')}
+              >
+                Information
+              </button>
             </div>
             <div className="flex flex-col lg:flex-row w-full gap-4 items-stretch">
               <div className="lg:w-1/2 h-[500px] lg:h-[calc(100vh-260px)]">
@@ -702,7 +716,7 @@ const MapsPage: React.FC = () => {
                         <div className="mb-4 w-full flex-shrink-0">
                           <h4 className="text-lg font-bold mb-2">Meta Data</h4>
                           <div className="bg-card rounded-lg shadow p-4 border w-full">
-                            <div className="grid grid-cols-3 gap-x-8 gap-y-2 w-full">
+                            <div className="grid grid-cols-3 gap-x-4 gap-y-2 w-full">
                               <div className="flex"><span className="font-semibold pr-2">District:</span> <span>{reservoirMetaData["District"]}</span></div>
                               <div className="flex"><span className="font-semibold pr-2">Taluka:</span> <span>{reservoirMetaData["Taluka"]}</span></div>
                               <div className="flex"><span className="font-semibold pr-2">Name of Schemes:</span> <span>{reservoirMetaData["Name of Schemes"]}</span></div>
@@ -718,6 +732,7 @@ const MapsPage: React.FC = () => {
                       )}
                       <div className="flex-1 flex flex-col">
                         <InteractiveRainfallChart
+                          key={`${selectedReservoirName}-${selectedReservoirMetric}`}
                           data={reservoirTimeSeries}
                           title={`${selectedReservoirName.charAt(0).toUpperCase() + selectedReservoirName.slice(1)} - ${reservoirMetricOptions.find(m => m.value === selectedReservoirMetric)?.label}`}
                           yAxisLabel={reservoirMetricOptions.find(m => m.value === selectedReservoirMetric)?.label || "Value"}

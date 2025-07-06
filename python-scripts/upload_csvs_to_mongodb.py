@@ -1,22 +1,16 @@
 import os
 import pandas as pd
 from pymongo import MongoClient
+import re
 
 MONGO_URI = os.environ.get('MONGODB_URI')
 if not MONGO_URI:
     raise RuntimeError('Please set the MONGODB_URI environment variable.')
 DB_NAME = "rainfall-data"
+COLLECTION_NAME = "rainfalldatas"
 
-# Directory containing your CSVs
-CSV_DIR = "/home/aravinthakshan/Projects/rainfall-website-final/public"
-
-# List of CSV files with 2025 dates
-csv_files = [
-    "1st June.csv", "2nd June.csv", "3rd June.csv", "4th June.csv",
-    "6th June.csv", "7th June.csv", "8th June.csv", "9th June.csv",
-    "10th June.csv", "11th June.csv", "12th June.csv", "13th June.csv",
-    "14th June.csv", "15th June.csv", "16th June.csv", "17th June.csv", "18th June.csv"
-]
+# Directory containing your PDF/CSV files
+DATA_DIR = os.path.join(os.path.dirname(__file__), "..", "public", "Rainfall")
 
 def clean_numeric_value(value):
     """Clean and convert numeric values, handling NaN and empty strings"""
@@ -33,6 +27,13 @@ def clean_string_value(value):
         return ''
     return str(value).strip()
 
+def extract_date_from_filename(filename):
+    # Assumes date is the last part before .pdf, e.g. ...21.06.2025.pdf
+    match = re.search(r'(\d{2}\.\d{2}\.\d{4})\.pdf$', filename)
+    if match:
+        return match.group(1)
+    return None
+
 def main():
     client = MongoClient(MONGO_URI)
     db = client[DB_NAME]
@@ -45,30 +46,22 @@ def main():
 
     total_records = 0
 
-    for filename in csv_files:
-        path = os.path.join(CSV_DIR, filename)
-        if not os.path.exists(path):
-            print(f"File not found: {filename}")
+    for filename in os.listdir(DATA_DIR):
+        if not filename.lower().endswith('.csv'):
             continue
-
-        print(f"Processing {filename}...")
-        
+        path = os.path.join(DATA_DIR, filename)
+        date_str = extract_date_from_filename(filename)
+        if not date_str:
+            print(f"Could not extract date from filename: {filename}")
+            continue
+        print(f"Processing {filename} (date: {date_str}) ...")
         try:
-            # Read CSV with explicit data types
             df = pd.read_csv(path)
-            
-            # Add the date field with 2025 year
-            date_with_year = filename.replace(".csv", "") + " 2025"
-            df["date"] = date_with_year
-            
-            # Clean and process the data
+            df["date"] = date_str
             records = []
             for _, row in df.iterrows():
-                # Skip rows without taluka information
                 if pd.isna(row.get('taluka')) or str(row.get('taluka')).strip() == '':
                     continue
-                
-                # Clean and validate the record
                 record = {
                     'region': clean_string_value(row.get('region', '')),
                     'district': clean_string_value(row.get('district', '')),
@@ -79,36 +72,26 @@ def main():
                     'rain_last_24hrs': clean_numeric_value(row.get('rain_last_24hrs', 0)),
                     'total_rainfall': clean_numeric_value(row.get('total_rainfall', 0)),
                     'percent_against_avg': clean_numeric_value(row.get('percent_against_avg', 0)),
-                    'date': date_with_year
+                    'date': date_str
                 }
-                
-                # Only add records with valid taluka names
                 if record['taluka'] and record['taluka'] != '':
                     records.append(record)
-            
             if records:
-                # Insert records in batches for better performance
                 batch_size = 100
                 for i in range(0, len(records), batch_size):
                     batch = records[i:i + batch_size]
                     collection.insert_many(batch)
-                
                 total_records += len(records)
                 print(f"Uploaded {len(records)} records from {filename}")
             else:
                 print(f"No valid records found in {filename}")
-                
         except Exception as e:
             print(f"Error processing {filename}: {str(e)}")
             continue
 
-    print(f"All CSVs uploaded successfully! Total records: {total_records}")
-    
-    # Verify the upload
+    print(f"All files uploaded successfully! Total records: {total_records}")
     final_count = collection.count_documents({})
     print(f"Total records in database: {final_count}")
-    
-    # Show sample of dates
     dates = collection.distinct('date')
     print(f"Available dates: {sorted(dates)}")
 

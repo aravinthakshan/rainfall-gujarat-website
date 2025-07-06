@@ -10,6 +10,7 @@ import { TimeSeriesBrushChart } from "@/components/TimeSeriesBrushChart"
 import InteractiveRainfallChart from "@/components/InteractiveRainfallChart"
 import { CalendarDatePicker } from "@/components/ui/calendar-date-picker"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import ReservoirMap from "@/components/ReservoirMap"
 
 // Format date label from database format (e.g., "01/06/2025" -> "01/06/2025")
 function formatDateLabel(dateString: string) {
@@ -242,6 +243,46 @@ const MapViewWithClick = React.memo<{
 
 MapViewWithClick.displayName = 'MapViewWithClick'
 
+const reservoirMetricOptions = [
+  { value: "PercentageFilling", label: "% Filling" },
+  { value: "InflowinCusecs", label: "Inflow (Cusecs)" },
+  { value: "OutflowRiverinCusecs", label: "Outflow River (Cusecs)" },
+  { value: "outflowCanalinCusecs", label: "Outflow Canal (Cusecs)" },
+];
+
+const reservoirColorBins = [
+  { min: 0, max: 20, color: "#7fcdbb" },      // light blue
+  { min: 20, max: 40, color: "#41b6c4" },    // greenish blue
+  { min: 40, max: 60, color: "#ffffb2" },    // yellow
+  { min: 60, max: 80, color: "#fe9929" },    // orange
+  { min: 80, max: 100, color: "#de2d26" },   // red
+  { min: 100, max: Infinity, color: "#a50f15" }, // dark red for >100%
+];
+
+function getReservoirColor(value: number) {
+  for (const bin of reservoirColorBins) {
+    if (value >= bin.min && value < bin.max) return bin.color;
+  }
+  return reservoirColorBins[reservoirColorBins.length - 1].color;
+}
+
+// Helper to get warning stations for marquee
+function getReservoirWarningStations(reservoirData: any[]) {
+  const high = [];
+  const med = [];
+  const low = [];
+  for (const row of reservoirData) {
+    let val = row["PercentageFilling %"];
+    if (typeof val === "string" && val.includes("%")) val = val.replace("%", "");
+    val = Number(val);
+    if (isNaN(val)) continue;
+    if (val > 90) high.push(row["Name of Schemes"]);
+    else if (val > 80) med.push(row["Name of Schemes"]);
+    else if (val > 70) low.push(row["Name of Schemes"]);
+  }
+  return { high, med, low };
+}
+
 const MapsPage: React.FC = () => {
   const [selectedDate, setSelectedDate] = useState<string>("16th June")
   const [selectedDateObject, setSelectedDateObject] = useState<Date | undefined>(undefined)
@@ -252,6 +293,14 @@ const MapsPage: React.FC = () => {
   const [selectedTehsil, setSelectedTehsil] = useState<string | null>(null)
   const [availableDates, setAvailableDates] = useState<string[]>([])
   const [loading, setLoading] = useState(true)
+  const [reservoirGeojson, setReservoirGeojson] = useState<any>(null);
+  const [reservoirData, setReservoirData] = useState<any[]>([]);
+  const [reservoirAvailableDates, setReservoirAvailableDates] = useState<string[]>([]);
+  const [selectedReservoirDate, setSelectedReservoirDate] = useState<string>("");
+  const [selectedReservoirMetric, setSelectedReservoirMetric] = useState<string>("PercentageFilling");
+  const [reservoirLoading, setReservoirLoading] = useState(false);
+  const [selectedReservoirName, setSelectedReservoirName] = useState<string | null>(null);
+  const [reservoirTimeSeries, setReservoirTimeSeries] = useState<any[]>([]);
 
   // Load available dates from MongoDB
   useEffect(() => {
@@ -345,7 +394,7 @@ const MapsPage: React.FC = () => {
       })
   }, [selectedMetric, availableDates]) // Depend on selectedMetric and availableDates for time series
 
-  // Load GeoJSON once
+  // Load GeoJSON once (for rainfall and for reservoir boundary)
   useEffect(() => {
     fetch("/gujarat_tehsil.geojson")
       .then(res => {
@@ -358,6 +407,73 @@ const MapsPage: React.FC = () => {
         // You might want to show a user-friendly error message here
       })
   }, [])
+
+  // Fetch reservoir geojson once
+  useEffect(() => {
+    fetch("/Reservoir_ID_Location.geojson")
+      .then(res => res.json())
+      .then(setReservoirGeojson)
+      .catch(console.error);
+  }, []);
+
+  // Fetch available reservoir dates once
+  useEffect(() => {
+    fetch("/api/reservoir-data")
+      .then(res => res.json())
+      .then((data: any[]) => {
+        const dates = Array.from(new Set(data.map((row: any) => row.date))) as string[];
+        setReservoirAvailableDates(dates);
+        if (dates.length > 0 && !selectedReservoirDate) setSelectedReservoirDate(dates[dates.length - 1]);
+      })
+      .catch(console.error);
+  }, []);
+
+  // Fetch reservoir data for selected date
+  useEffect(() => {
+    if (!selectedReservoirDate) return;
+    setReservoirLoading(true);
+    fetch(`/api/reservoir-data?date=${encodeURIComponent(selectedReservoirDate)}`)
+      .then(res => res.json())
+      .then(data => setReservoirData(data))
+      .catch(console.error)
+      .finally(() => setReservoirLoading(false));
+  }, [selectedReservoirDate]);
+
+  // Build time series for selected reservoir
+  useEffect(() => {
+    if (!selectedReservoirName) {
+      setReservoirTimeSeries([]);
+      return;
+    }
+    // Fetch all reservoir data for the selected name
+    fetch('/api/reservoir-data')
+      .then(res => res.json())
+      .then((data: any[]) => {
+        const filtered = data.filter(row => row["Name of Schemes"]?.toLowerCase() === selectedReservoirName.toLowerCase());
+        const series = filtered.map(row => ({
+          date: row.date,
+          timestamp: new Date(row.date).getTime(),
+          value: Number(row[selectedReservoirMetric]) || 0,
+          formattedDate: row.date,
+        })).sort((a, b) => a.timestamp - b.timestamp);
+        setReservoirTimeSeries(series);
+      });
+  }, [selectedReservoirName, selectedReservoirMetric]);
+
+  // Set default selected reservoir on data/metric change (like rainfall)
+  useEffect(() => {
+    if (reservoirData.length > 0 && !selectedReservoirName) {
+      let maxReservoir = null, maxVal = -Infinity;
+      reservoirData.forEach((row: any) => {
+        const val = Number(row[selectedReservoirMetric]);
+        if (val > maxVal) {
+          maxVal = val;
+          maxReservoir = row["Name of Schemes"];
+        }
+      });
+      setSelectedReservoirName(maxReservoir);
+    }
+  }, [reservoirData, selectedReservoirMetric]);
 
   // Helper: get value for a tehsil
   function getTehsilValue(tehsil: string) {
@@ -523,26 +639,108 @@ const MapsPage: React.FC = () => {
                 Reservoir storage and water level data across Gujarat
               </p>
             </div>
-
-            {/* Placeholder for Reservoir content */}
+            <div className="flex gap-2 mb-4 items-center">
+            </div>
+            {/* Scrolling warning sign for high PercentageFilling % stations */}
+            {reservoirData.length > 0 && (() => {
+              const { high, med, low } = getReservoirWarningStations(reservoirData);
+              if (high.length === 0 && med.length === 0 && low.length === 0) return null;
+              return (
+                <div style={{ background: '#fffbe6', borderBottom: '2px solid #facc15', padding: '8px 0', marginBottom: 12, overflow: 'hidden', whiteSpace: 'nowrap' }}>
+                  <div
+                    style={{
+                      display: 'inline-block',
+                      animation: 'scroll-left 20s linear infinite',
+                      fontWeight: 600,
+                      fontSize: 16,
+                    }}
+                  >
+                    {high.length > 0 && <span style={{ color: '#dc2626', marginRight: 24 }}>HIGH (&gt;90%): {high.join(', ')}</span>}
+                    {med.length > 0 && <span style={{ color: '#f59e42', marginRight: 24 }}>ALERT (80-90%): {med.join(', ')}</span>}
+                    {low.length > 0 && <span style={{ color: '#facc15' }}>WARNING (70-80%): {low.join(', ')}</span>}
+                  </div>
+                  <style>{`
+                    @keyframes scroll-left {
+                      0% { transform: translateX(100%); }
+                      100% { transform: translateX(-100%); }
+                    }
+                  `}</style>
+                </div>
+              );
+            })()}
             <div className="flex flex-col lg:flex-row w-full gap-4">
               <div className="lg:w-1/2 h-[500px] lg:h-[calc(100vh-260px)]">
-                <div className="h-full relative border rounded bg-white dark:bg-slate-900 flex items-center justify-center">
-                  <div className="text-center">
-                    <Database className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                    <h4 className="text-lg font-medium mb-2">Reservoir Map</h4>
-                    <p className="text-muted-foreground">Reservoir data visualization coming soon</p>
+                <div className="h-full relative border rounded bg-white dark:bg-slate-900">
+                  {reservoirGeojson && reservoirData.length > 0 && geojson ? (
+                    <ReservoirMap
+                      geojson={reservoirGeojson}
+                      boundaryGeojson={geojson}
+                      reservoirData={reservoirData}
+                      getColor={getReservoirColor}
+                      selectedMetric={selectedReservoirMetric}
+                      selectedDate={selectedReservoirDate}
+                      onReservoirClick={setSelectedReservoirName}
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">Loading reservoir map...</div>
+                  )}
+                  {/* Legend */}
+                  <div className="absolute bottom-4 right-4 bg-background/90 backdrop-blur-sm border rounded-lg p-4 z-[1000]">
+                    <h4 className="font-medium mb-2">
+                      {reservoirMetricOptions.find(m => m.value === selectedReservoirMetric)?.label}
+                    </h4>
+                    <div className="space-y-1 text-xs">
+                      {reservoirColorBins.map((bin, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded" style={{ background: bin.color }}></div>
+                          <span>{bin.max === Infinity ? `>${bin.min}` : `${bin.min} - ${bin.max}`}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
               <div className="lg:w-1/2">
-                <div className="h-[500px] lg:h-[calc(100vh-260px)] border rounded bg-white dark:bg-slate-900 flex items-center justify-center">
-                  <div className="text-center">
-                    <Database className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
-                    <h4 className="text-lg font-medium mb-2">Reservoir Charts</h4>
-                    <p className="text-muted-foreground">Reservoir time series data coming soon</p>
+                {selectedReservoirName && reservoirTimeSeries.length > 0 ? (
+                  <InteractiveRainfallChart
+                    data={reservoirTimeSeries}
+                    title={`${selectedReservoirName.charAt(0).toUpperCase() + selectedReservoirName.slice(1)} - ${reservoirMetricOptions.find(m => m.value === selectedReservoirMetric)?.label}`}
+                    yAxisLabel={reservoirMetricOptions.find(m => m.value === selectedReservoirMetric)?.label || "Value"}
+                    color="#60a5fa"
+                  >
+                    <CalendarDatePicker
+                      selectedDate={selectedReservoirDate ? parseDateFromString(selectedReservoirDate) : undefined}
+                      onDateChange={date => {
+                        if (date) {
+                          // Convert Date to DD/MM/YYYY string
+                          const day = date.getDate().toString().padStart(2, '0');
+                          const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                          const year = date.getFullYear();
+                          const dateString = `${day}/${month}/${year}`;
+                          setSelectedReservoirDate(dateString);
+                        }
+                      }}
+                      availableDates={reservoirAvailableDates}
+                      disabled={reservoirLoading}
+                    />
+                    <select
+                      className="flex h-10 w-[240px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      value={selectedReservoirMetric}
+                      onChange={e => setSelectedReservoirMetric(e.target.value)}
+                    >
+                      {reservoirMetricOptions.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </InteractiveRainfallChart>
+                ) : (
+                  <div className="h-[500px] lg:h-[calc(100vh-260px)] border rounded bg-white dark:bg-slate-900 flex items-center justify-center">
+                    <div className="text-center">
+                      <h4 className="text-lg font-medium mb-2">Reservoir Data</h4>
+                      <p className="text-muted-foreground">Click a reservoir marker to view time series</p>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
             </div>
           </TabsContent>

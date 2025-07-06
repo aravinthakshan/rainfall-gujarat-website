@@ -6,6 +6,41 @@ import { MapPin } from "lucide-react"
 import dynamic from "next/dynamic"
 import "leaflet/dist/leaflet.css"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
+import { TimeSeriesBrushChart } from "@/components/TimeSeriesBrushChart"
+import InteractiveRainfallChart from "@/components/InteractiveRainfallChart"
+import { CalendarDatePicker } from "@/components/ui/calendar-date-picker"
+
+// Format date label from database format (e.g., "01/06/2025" -> "01/06/2025")
+function formatDateLabel(dateString: string) {
+  // If already in DD/MM/YYYY format, return as is
+  if (dateString.includes('/')) {
+    return dateString;
+  }
+  
+  // Legacy format conversion (e.g., "1st June 2025" -> "01/06/2025")
+  return dateString.replace(/(\d+)(st|nd|rd|th)/, (m, d) => d.padStart(2, "0")).replace(" ", "/").replace("June", "06/2025")
+}
+
+// Parse date string to Date object (e.g., "01/06/2025" -> Date)
+function parseDateFromString(dateString: string): Date {
+  // Parse DD/MM/YYYY format
+  if (dateString.includes('/')) {
+    const [day, month, year] = dateString.split('/').map(Number)
+    return new Date(year, month - 1, day) // month is 0-indexed
+  }
+  
+  // Legacy format parsing (e.g., "1st June 2025" -> Date)
+  const match = dateString.match(/(\d+)(st|nd|rd|th)\s+(June)\s+(\d{4})/)
+  if (match) {
+    const day = parseInt(match[1], 10)
+    const month = 5 // June is month 5 (0-indexed)
+    const year = parseInt(match[4], 10)
+    return new Date(year, month, day)
+  }
+  
+  // Fallback to current date if parsing fails
+  return new Date()
+}
 
 // Color bins and thresholds as per reference image
 const colorBins = [
@@ -37,27 +72,8 @@ function getColor(value: number) {
   return colorBins[colorBins.length - 1].color
 }
 
-// Hardcoded CSV file list (since we can't list files in public from client-side)
-const csvFilesList = [
-  "1st June.csv",
-  "2nd June.csv",
-  "3rd June.csv",
-  "4th June.csv",
-  "6th June.csv",
-  "7th June.csv",
-  "8th June.csv",
-  "9th June.csv",
-  "10th June.csv",
-  "11th June.csv",
-  "12th June.csv",
-  "13th June.csv",
-  "14th June.csv",
-  "15th June.csv",
-  "16th June.csv",
-  "17th June.csv",
-  "18th June.csv",
-
-];
+// We'll fetch dates from the API instead of hardcoding
+const csvFilesList: string[] = [];
 type CsvRow = Record<string, string>
 
 type Feature = {
@@ -155,11 +171,6 @@ const MapViewWithClick = React.memo<{
     }
   }
   
-  // Format CSV filename to date label
-  function formatDateLabel(filename: string) {
-    return filename.replace(/\.csv$/, "").replace(/(\d+)(st|nd|rd|th)/, (m, d) => d.padStart(2, "0")).replace(" ", "/").replace("June", "06/2025")
-  }
-
   // Update tooltips when date or metric changes
   React.useEffect(() => {
     const dateLabel = formatDateLabel(selectedDate)
@@ -231,87 +242,103 @@ const MapViewWithClick = React.memo<{
 MapViewWithClick.displayName = 'MapViewWithClick'
 
 const MapsPage: React.FC = () => {
-  const [selectedDate, setSelectedDate] = useState<string>("16th June.csv")
+  const [selectedDate, setSelectedDate] = useState<string>("16th June")
+  const [selectedDateObject, setSelectedDateObject] = useState<Date | undefined>(undefined)
   const [selectedMetric, setSelectedMetric] = useState<string>("total_rainfall")
   const [csvData, setCsvData] = useState<CsvRow[]>([])
   const [geojson, setGeojson] = useState<GeoJson | null>(null)
   const [allCsvData, setAllCsvData] = useState<{ [tehsil: string]: { [date: string]: number } }>({})
   const [selectedTehsil, setSelectedTehsil] = useState<string | null>(null)
+  const [availableDates, setAvailableDates] = useState<string[]>([])
+  const [loading, setLoading] = useState(true)
 
-  // Load CSV data for selected date (for map coloring)
+  // Load available dates from MongoDB
   useEffect(() => {
-    if (!selectedDate) return
-    fetch(`/${selectedDate}`)
+    fetch('/api/rainfall-dates')
       .then(res => {
-        if (!res.ok) throw new Error(`Failed to load ${selectedDate}`)
-        return res.text()
+        if (!res.ok) throw new Error('Failed to load dates')
+        return res.json()
       })
-      .then(text => {
-        const rows = text.split("\n").filter(Boolean)
-        const headers = rows[0].split(",")
-        const data = rows.slice(1).map((row: string) => {
-          const values = row.split(",")
-          const obj: CsvRow = {}
-          headers.forEach((h, i) => (obj[h.trim()] = values[i]?.trim()))
-          return obj
-        })
-        setCsvData(data)
+      .then(dates => {
+        setAvailableDates(dates)
+        if (dates.length > 0) {
+          const latestDate = dates[dates.length - 1]
+          setSelectedDate(latestDate) // Set to latest date
+          setSelectedDateObject(parseDateFromString(latestDate))
+        }
+        setLoading(false)
       })
       .catch(error => {
-        console.error('Error loading CSV data:', error)
-        // You might want to show a user-friendly error message here
+        console.error('Error loading dates:', error)
+        setLoading(false)
+      })
+  }, [])
+
+  // Load CSV data for selected date (for map coloring) from MongoDB
+  useEffect(() => {
+    if (!selectedDate) return
+    fetch(`/api/rainfall-data?date=${encodeURIComponent(selectedDate)}`)
+      .then(res => {
+        if (!res.ok) throw new Error(`Failed to load data for ${selectedDate}`)
+        return res.json()
+      })
+      .then(data => {
+        // Convert MongoDB data to CSV-like format for compatibility
+        const csvData = data.map((item: any) => ({
+          taluka: item.taluka,
+          rain_till_yesterday: item.rain_till_yesterday.toString(),
+          rain_last_24hrs: item.rain_last_24hrs.toString(),
+          total_rainfall: item.total_rainfall.toString(),
+          percent_against_avg: item.percent_against_avg.toString(),
+        }))
+        setCsvData(csvData)
+      })
+      .catch(error => {
+        console.error('Error loading rainfall data:', error)
       })
   }, [selectedDate]) // Only depend on selectedDate for map coloring
 
-  // Load all CSVs for time series
+  // Load all data for time series from MongoDB
   useEffect(() => {
-    Promise.all(csvFilesList.map(filename =>
-      fetch(`/${filename}`)
-        .then(res => {
-          if (!res.ok) throw new Error(`Failed to load ${filename}`)
-          return res.text()
-        })
-        .then(text => {
-          const rows = text.split("\n").filter(Boolean)
-          const headers = rows[0].split(",")
-          const data = rows.slice(1).map(row => {
-            const values = row.split(",")
-            const obj: CsvRow = {}
-            headers.forEach((h, i) => (obj[h.trim()] = values[i]?.trim()))
-            return obj
-          })
-          return { filename, data }
-        })
-        .catch(error => {
-          console.error(`Error loading ${filename}:`, error)
-          return { filename, data: [] }
-        })
-    )).then(results => {
-      const tehsilData: { [tehsil: string]: { [date: string]: number } } = {}
-      results.forEach(({ filename, data }) => {
-        data.forEach(row => {
-          const tehsil = row.taluka?.toLowerCase()
+    if (availableDates.length === 0) return
+    
+    fetch('/api/rainfall-data')
+      .then(res => {
+        if (!res.ok) throw new Error('Failed to load all rainfall data')
+        return res.json()
+      })
+      .then(data => {
+        const tehsilData: { [tehsil: string]: { [date: string]: number } } = {}
+        
+        data.forEach((item: any) => {
+          const tehsil = item.taluka?.toLowerCase()
           if (!tehsil) return
           if (!tehsilData[tehsil]) tehsilData[tehsil] = {}
-          tehsilData[tehsil][filename] = Number(row[selectedMetric]) || 0
+          tehsilData[tehsil][item.date] = Number(item[selectedMetric]) || 0
         })
+        
+        setAllCsvData(tehsilData)
+        
+        // Default: find tehsil with max value for the selected metric on latest date
+        if (!selectedTehsil && availableDates.length > 0) {
+          const latestDate = availableDates[availableDates.length - 1]
+          const latestData = data.filter((item: any) => item.date === latestDate)
+          let maxTehsil = null, maxVal = -Infinity
+          
+          latestData.forEach((item: any) => {
+            const val = Number(item[selectedMetric])
+            if (val > maxVal) {
+              maxVal = val
+              maxTehsil = item.taluka?.toLowerCase()
+            }
+          })
+          setSelectedTehsil(maxTehsil)
+        }
       })
-      setAllCsvData(tehsilData)
-      // Default: find tehsil with max value for the selected metric on latest date
-      if (!selectedTehsil && results.length) {
-        const latest = results[results.length - 1]
-        let maxTehsil = null, maxVal = -Infinity
-        latest.data.forEach(row => {
-          const val = Number(row[selectedMetric])
-          if (val > maxVal) {
-            maxVal = val
-            maxTehsil = row.taluka?.toLowerCase()
-          }
-        })
-        setSelectedTehsil(maxTehsil)
-      }
-    })
-  }, [selectedMetric]) // Only depend on selectedMetric for time series
+      .catch(error => {
+        console.error('Error loading all rainfall data:', error)
+      })
+  }, [selectedMetric, availableDates]) // Depend on selectedMetric and availableDates for time series
 
   // Load GeoJSON once
   useEffect(() => {
@@ -340,105 +367,110 @@ const MapsPage: React.FC = () => {
     return isNaN(numVal) ? null : numVal
   }
 
-  // Format CSV filename to date label
-  function formatDateLabel(filename: string) {
-    return filename.replace(/\.csv$/, "").replace(/(\d+)(st|nd|rd|th)/, (m, d) => d.padStart(2, "0")).replace(" ", "/").replace("June", "06/2025")
+  // Handle date selection from calendar
+  const handleDateChange = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDateObject(date)
+      // Convert Date back to string format for API calls (DD/MM/YYYY)
+      const day = date.getDate().toString().padStart(2, '0')
+      const month = (date.getMonth() + 1).toString().padStart(2, '0')
+      const year = date.getFullYear()
+      const dateString = `${day}/${month}/${year}`
+      setSelectedDate(dateString)
+    }
   }
 
   // Time series data for selected tehsil
   const timeSeries = selectedTehsil && allCsvData[selectedTehsil]
-    ? csvFilesList.map(filename => ({
-        date: formatDateLabel(filename),
-        value: allCsvData[selectedTehsil]?.[filename] ?? 0,
+    ? availableDates.map(date => ({
+        date: formatDateLabel(date), // Use the date string directly
+        value: allCsvData[selectedTehsil]?.[date] ?? 0,
       }))
     : []
-
-  // --- Time Series Plot Component ---
-  function TimeSeriesPlot({ tehsil, data, metric }: { tehsil: string | null, data: { [tehsil: string]: { [date: string]: number } }, metric: string }) {
-    if (!tehsil || !data[tehsil]) return <div className="text-muted-foreground">Select a tehsil</div>
-    const series = csvFilesList.map(filename => ({
-      date: formatDateLabel(filename),
-      value: data[tehsil][filename] ?? 0,
-    }))
-    return (
-      <div className="w-full h-[380px] flex flex-col justify-center items-center bg-[#181c24] dark:bg-[#181c24] rounded-2xl shadow-lg p-6 mx-auto">
-        <div className="font-semibold mb-3 text-white text-lg w-full text-center">{tehsil.charAt(0).toUpperCase() + tehsil.slice(1)} - {metricOptions.find(m => m.value === metric)?.label}</div>
-        <ResponsiveContainer width="98%" height={300}>
-          <LineChart data={series} margin={{ top: 20, right: 30, left: 10, bottom: 5 }}>
-            <CartesianGrid stroke="#23272f" strokeDasharray="3 3" />
-            <XAxis dataKey="date" tick={{ fontSize: 13, fill: '#b0b8c9' }} axisLine={{ stroke: '#23272f' }} tickLine={false} />
-            <YAxis tick={{ fontSize: 13, fill: '#b0b8c9' }} axisLine={{ stroke: '#23272f' }} tickLine={false} />
-            <Tooltip contentStyle={{ background: '#23272f', border: 'none', color: '#fff' }} labelStyle={{ color: '#fff' }} formatter={v => `${v}`} />
-            <Line type="monotone" dataKey="value" stroke="#60a5fa" strokeWidth={3} dot={{ r: 5, fill: '#fff', stroke: '#60a5fa', strokeWidth: 2 }} activeDot={{ r: 7, fill: '#60a5fa', stroke: '#fff', strokeWidth: 2 }} />
-          </LineChart>
-        </ResponsiveContainer>
-      </div>
-    )
-  }
 
   return (
     <div className="flex flex-col min-h-screen">
       <div className="flex-1 p-4 md:p-8 pt-6">
         <div className="mb-6">
           <h2 className="text-3xl font-bold tracking-tight">Rainfall Map</h2>
-          <p className="text-muted-foreground">Interactive map showing rainfall data across Gujarat</p>
+          <p className="text-muted-foreground">
+            Interactive map showing rainfall data across Gujarat
+            {loading && <span className="ml-2 text-blue-600">Loading data...</span>}
+          </p>
         </div>
-        {/* Dropdowns */}
-        <div className="flex gap-2 mb-4 items-center">
-          <select
-            className="border rounded px-2 py-1 text-sm"
-            value={selectedDate}
-            onChange={e => setSelectedDate(e.target.value)}
-          >
-            {csvFilesList.map(f => (
-              <option key={f} value={f}>{formatDateLabel(f)}</option>
-            ))}
-          </select>
-          <select
-            className="border rounded px-2 py-1 text-sm"
-            value={selectedMetric}
-            onChange={e => setSelectedMetric(e.target.value)}
-          >
-            {metricOptions.map(opt => (
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            ))}
-          </select>
-        </div>
+
         {/* Map and Time Series Side by Side */}
-        <div className="flex w-full h-[calc(100vh-260px)]">
-          <div className="flex-1 relative border rounded bg-white dark:bg-slate-900">
-            {geojson ? (
-              <MapViewWithClick 
-                geojson={geojson} 
-                getTehsilValue={getTehsilValue} 
-                getColor={getColor} 
-                onTehsilClick={setSelectedTehsil} 
-                selectedMetric={selectedMetric} 
-                selectedDate={selectedDate} 
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center">Loading map...</div>
-            )}
-            {/* Legend */}
-            <div className="absolute bottom-4 right-4 bg-background/90 backdrop-blur-sm border rounded-lg p-4 z-[1000]">
-              <h4 className="font-medium mb-2">
-                {selectedMetric === "percent_against_avg" ? "% Against Avg" : 
-                 selectedMetric === "rain_till_yesterday" ? "Rain till Yesterday (mm)" :
-                 selectedMetric === "rain_last_24hrs" ? "Rain Last 24hrs (mm)" :
-                 "Total Rainfall (mm)"}
-              </h4>
-              <div className="space-y-1 text-xs">
-                {colorBins.map((bin, i) => (
-                  <div key={i} className="flex items-center gap-2">
-                    <div className="w-4 h-4 rounded" style={{ background: bin.color }}></div>
-                    <span>{bin.max === Infinity ? `>${bin.min}` : `${bin.min} - ${bin.max}`}</span>
-                  </div>
-                ))}
+        <div className="flex flex-col lg:flex-row w-full gap-4">
+          <div className="lg:w-1/2 h-[500px] lg:h-[calc(100vh-260px)]">
+            <div className="h-full relative border rounded bg-white dark:bg-slate-900">
+              {geojson ? (
+                <MapViewWithClick 
+                  geojson={geojson} 
+                  getTehsilValue={getTehsilValue} 
+                  getColor={getColor} 
+                  onTehsilClick={setSelectedTehsil} 
+                  selectedMetric={selectedMetric} 
+                  selectedDate={selectedDate} 
+                />
+              ) : (
+                <div className="absolute inset-0 flex items-center justify-center">Loading map...</div>
+              )}
+              {/* Legend */}
+              <div className="absolute bottom-4 right-4 bg-background/90 backdrop-blur-sm border rounded-lg p-4 z-[1000]">
+                <h4 className="font-medium mb-2">
+                  {selectedMetric === "percent_against_avg" ? "% Against Avg" : 
+                   selectedMetric === "rain_till_yesterday" ? "Rain till Yesterday (mm)" :
+                   selectedMetric === "rain_last_24hrs" ? "Rain Last 24hrs (mm)" :
+                   "Total Rainfall (mm)"}
+                </h4>
+                <div className="space-y-1 text-xs">
+                  {colorBins.map((bin, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded" style={{ background: bin.color }}></div>
+                      <span>{bin.max === Infinity ? `>${bin.min}` : `${bin.min} - ${bin.max}`}</span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-          <div className="flex-1 flex items-center justify-center p-4">
-            <TimeSeriesPlot tehsil={selectedTehsil} data={allCsvData} metric={selectedMetric} />
+          <div className="lg:w-1/2">
+            {selectedTehsil && allCsvData[selectedTehsil] ? (
+              <InteractiveRainfallChart
+                data={availableDates.map(date => ({
+                  date: date, // Use the date string directly
+                  timestamp: parseDateFromString(date).getTime(),
+                  value: allCsvData[selectedTehsil]?.[date] ?? 0,
+                  formattedDate: formatDateLabel(date),
+                }))}
+                title={`${selectedTehsil.charAt(0).toUpperCase() + selectedTehsil.slice(1)} - ${metricOptions.find(m => m.value === selectedMetric)?.label}`}
+                yAxisLabel={metricOptions.find(m => m.value === selectedMetric)?.label || "Value"}
+                color="#60a5fa"
+                selectedDate={selectedDate}
+                onDateSelect={(date) => {
+                  setSelectedDate(date)
+                  setSelectedDateObject(parseDateFromString(date))
+                }}
+              >
+                <CalendarDatePicker
+                  selectedDate={selectedDateObject}
+                  onDateChange={handleDateChange}
+                  availableDates={availableDates}
+                  disabled={loading}
+                />
+                <select
+                  className="flex h-10 w-[240px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                  value={selectedMetric}
+                  onChange={e => setSelectedMetric(e.target.value)}
+                >
+                  {metricOptions.map(opt => (
+                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                  ))}
+                </select>
+              </InteractiveRainfallChart>
+            ) : (
+              <div className="text-muted-foreground flex items-center justify-center h-[500px]">Select a tehsil to view rainfall data</div>
+            )}
           </div>
         </div>
       </div>

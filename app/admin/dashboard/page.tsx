@@ -9,15 +9,16 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import { Upload, FileText, Database, Calendar, LogOut, User } from "lucide-react"
+import { Upload, FileText, Calendar, LogOut, User, FileText as FilePdf } from "lucide-react"
 import { useAuth } from "../../../research-blog/lib/auth-context"
-import { uploadMarkdownPost, uploadCSVFile } from "./actions"
+import { uploadMarkdownPost, uploadPDFFile } from "./actions"
+import { CalendarDatePicker } from "@/components/ui/calendar-date-picker"
 
 export default function AdminDashboard() {
   const [markdownFile, setMarkdownFile] = useState<File | null>(null)
   const [images, setImages] = useState<FileList | null>(null)
-  const [csvFile, setCsvFile] = useState<File | null>(null)
-  const [csvDate, setCsvDate] = useState("")
+  const [pdfFile, setPdfFile] = useState<File | null>(null)
+  const [pdfDate, setPdfDate] = useState<Date | undefined>(undefined)
   const [isUploading, setIsUploading] = useState(false)
   const { isAuthenticated, logout } = useAuth()
   const router = useRouter()
@@ -59,22 +60,28 @@ export default function AdminDashboard() {
     }
   }
 
-  const handleCSVSubmit = async (e: React.FormEvent) => {
+  const handlePDFSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!csvFile || !csvDate) return
+    if (!pdfFile || !pdfDate) return
 
     setIsUploading(true)
     const formData = new FormData()
-    formData.append("csv", csvFile)
-    formData.append("date", csvDate)
+    formData.append("pdf", pdfFile)
+    
+    // Convert date to DD/MM/YYYY format
+    const day = pdfDate.getDate().toString().padStart(2, '0')
+    const month = (pdfDate.getMonth() + 1).toString().padStart(2, '0')
+    const year = pdfDate.getFullYear()
+    const dateString = `${day}/${month}/${year}`
+    formData.append("date", dateString)
 
     try {
-      await uploadCSVFile(formData)
-      alert("CSV file processed successfully!")
-      setCsvFile(null)
-      setCsvDate("")
+      const result = await uploadPDFFile(formData)
+      alert(result.message)
+      setPdfFile(null)
+      setPdfDate(undefined)
     } catch (error) {
-      alert("Error processing CSV file")
+      alert(`Error processing PDF file: ${error}`)
     } finally {
       setIsUploading(false)
     }
@@ -97,7 +104,7 @@ export default function AdminDashboard() {
           <div className="flex justify-between items-center">
             <div>
               <h1 className="text-2xl font-light text-gray-900">Admin Dashboard</h1>
-              <p className="text-gray-600 mt-1">Manage blog posts and data uploads</p>
+              <p className="text-gray-600 mt-1">Manage blog posts and rainfall data uploads</p>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2 text-sm text-gray-600">
@@ -125,9 +132,9 @@ export default function AdminDashboard() {
               <FileText className="w-4 h-4" />
               Blog Posts
             </TabsTrigger>
-            <TabsTrigger value="data" className="flex items-center gap-2">
-              <Database className="w-5 h-4" />
-              Data Upload
+            <TabsTrigger value="pdf" className="flex items-center gap-2">
+              <FilePdf className="w-4 h-4" />
+              PDF Upload
             </TabsTrigger>
           </TabsList>
 
@@ -177,47 +184,52 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
 
-          <TabsContent value="data">
+          <TabsContent value="pdf">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-lg font-medium">
-                  <Database className="w-5 h-5" />
-                  CSV Data Upload
+                  <FilePdf className="w-5 h-5" />
+                  Rainfall PDF Upload
                 </CardTitle>
+                <p className="text-sm text-gray-600 mt-2">
+                  Upload a rainfall PDF report to automatically parse and upload the data to MongoDB
+                </p>
               </CardHeader>
               <CardContent>
-                <form onSubmit={handleCSVSubmit} className="space-y-6">
+                <form onSubmit={handlePDFSubmit} className="space-y-6">
                   <div className="space-y-2">
-                    <Label htmlFor="csv">CSV File</Label>
+                    <Label htmlFor="pdf">PDF File</Label>
                     <Input
-                      id="csv"
+                      id="pdf"
                       type="file"
-                      accept=".csv"
-                      onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
+                      accept=".pdf"
+                      onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
                       className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
                     />
+                    <p className="text-sm text-gray-500">Upload a rainfall report PDF to parse and upload to database</p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="date" className="flex items-center gap-2">
+                    <Label htmlFor="pdf-date" className="flex items-center gap-2">
                       <Calendar className="w-4 h-4" />
-                      Associated Date
+                      Report Date
                     </Label>
-                    <Input
-                      id="date"
-                      type="date"
-                      value={csvDate}
-                      onChange={(e) => setCsvDate(e.target.value)}
+                    <CalendarDatePicker
+                      selectedDate={pdfDate}
+                      onDateChange={setPdfDate}
+                      availableDates={[]} // Empty array since this is for selecting new dates
+                      allowAnyDate={true}
                       className="max-w-xs"
                     />
+                    <p className="text-sm text-gray-500">The date this rainfall report represents</p>
                   </div>
 
                   <Button
                     type="submit"
-                    disabled={!csvFile || !csvDate || isUploading}
+                    disabled={!pdfFile || !pdfDate || isUploading}
                     className="bg-gray-900 hover:bg-gray-800"
                   >
-                    {isUploading ? "Processing..." : "Process CSV"}
+                    {isUploading ? "Processing..." : "Upload PDF to Database"}
                   </Button>
                 </form>
               </CardContent>

@@ -6,7 +6,8 @@
     "build": "next build",
     "dev": "next dev",
     "lint": "next lint",
-    "start": "next start"
+    "start": "next start",
+    "migrate-csv": "tsx scripts/migrate-csv-to-mongodb.ts"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.1",
@@ -48,6 +49,8 @@
     "leaflet": "^1.9.4",
     "lucide-react": "^0.454.0",
     "marked": "^16.0.0",
+    "mongodb": "^6.17.0",
+    "mongoose": "^8.16.1",
     "next": "15.2.4",
     "next-themes": "latest",
     "react": "^19",
@@ -64,11 +67,13 @@
     "zod": "^3.24.1"
   },
   "devDependencies": {
+    "@types/mongodb": "^4.0.6",
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
     "postcss": "^8.5",
     "tailwindcss": "^3.4.17",
+    "tsx": "^4.20.3",
     "typescript": "^5"
   }
 }

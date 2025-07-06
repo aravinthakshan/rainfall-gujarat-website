@@ -2,13 +2,14 @@
 
 import React, { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { MapPin } from "lucide-react"
+import { MapPin, Droplets, Database } from "lucide-react"
 import dynamic from "next/dynamic"
 import "leaflet/dist/leaflet.css"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { TimeSeriesBrushChart } from "@/components/TimeSeriesBrushChart"
 import InteractiveRainfallChart from "@/components/InteractiveRainfallChart"
 import { CalendarDatePicker } from "@/components/ui/calendar-date-picker"
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 
 // Format date label from database format (e.g., "01/06/2025" -> "01/06/2025")
 function formatDateLabel(dateString: string) {
@@ -277,6 +278,7 @@ const MapsPage: React.FC = () => {
   // Load CSV data for selected date (for map coloring) from MongoDB
   useEffect(() => {
     if (!selectedDate) return
+    console.log('Loading map data for date:', selectedDate)
     fetch(`/api/rainfall-data?date=${encodeURIComponent(selectedDate)}`)
       .then(res => {
         if (!res.ok) throw new Error(`Failed to load data for ${selectedDate}`)
@@ -292,6 +294,7 @@ const MapsPage: React.FC = () => {
           percent_against_avg: item.percent_against_avg.toString(),
         }))
         setCsvData(csvData)
+        console.log('Map data updated for date:', selectedDate)
       })
       .catch(error => {
         console.error('Error loading rainfall data:', error)
@@ -302,6 +305,7 @@ const MapsPage: React.FC = () => {
   useEffect(() => {
     if (availableDates.length === 0) return
     
+    console.log('Loading chart data for metric:', selectedMetric)
     fetch('/api/rainfall-data')
       .then(res => {
         if (!res.ok) throw new Error('Failed to load all rainfall data')
@@ -318,6 +322,7 @@ const MapsPage: React.FC = () => {
         })
         
         setAllCsvData(tehsilData)
+        console.log('Chart data updated for metric:', selectedMetric)
         
         // Default: find tehsil with max value for the selected metric on latest date
         if (!selectedTehsil && availableDates.length > 0) {
@@ -370,15 +375,27 @@ const MapsPage: React.FC = () => {
   // Handle date selection from calendar
   const handleDateChange = (date: Date | undefined) => {
     if (date) {
+      console.log('Date changed to:', date)
       setSelectedDateObject(date)
       // Convert Date back to string format for API calls (DD/MM/YYYY)
       const day = date.getDate().toString().padStart(2, '0')
       const month = (date.getMonth() + 1).toString().padStart(2, '0')
       const year = date.getFullYear()
       const dateString = `${day}/${month}/${year}`
+      console.log('Setting selectedDate to:', dateString)
       setSelectedDate(dateString)
     }
   }
+
+  // Debug effect to log when map should update
+  useEffect(() => {
+    console.log('Map should update - Date:', selectedDate, 'Metric:', selectedMetric, 'Data points:', csvData.length)
+  }, [selectedDate, selectedMetric, csvData.length])
+
+  // Debug effect to log when chart should update
+  useEffect(() => {
+    console.log('Chart should update - Metric:', selectedMetric, 'Tehsil:', selectedTehsil, 'Available dates:', availableDates.length)
+  }, [selectedMetric, selectedTehsil, availableDates.length])
 
   // Time series data for selected tehsil
   const timeSeries = selectedTehsil && allCsvData[selectedTehsil]
@@ -392,87 +409,144 @@ const MapsPage: React.FC = () => {
     <div className="flex flex-col min-h-screen">
       <div className="flex-1 p-4 md:p-8 pt-6">
         <div className="mb-6">
-          <h2 className="text-3xl font-bold tracking-tight">Rainfall Map</h2>
+          <h2 className="text-3xl font-bold tracking-tight">Water & Climate Dashboard</h2>
           <p className="text-muted-foreground">
-            Interactive map showing rainfall data across Gujarat
+            Interactive dashboard for water and climate data across Gujarat
             {loading && <span className="ml-2 text-blue-600">Loading data...</span>}
           </p>
         </div>
 
-        {/* Map and Time Series Side by Side */}
-        <div className="flex flex-col lg:flex-row w-full gap-4">
-          <div className="lg:w-1/2 h-[500px] lg:h-[calc(100vh-260px)]">
-            <div className="h-full relative border rounded bg-white dark:bg-slate-900">
-              {geojson ? (
-                <MapViewWithClick 
-                  geojson={geojson} 
-                  getTehsilValue={getTehsilValue} 
-                  getColor={getColor} 
-                  onTehsilClick={setSelectedTehsil} 
-                  selectedMetric={selectedMetric} 
-                  selectedDate={selectedDate} 
-                />
-              ) : (
-                <div className="absolute inset-0 flex items-center justify-center">Loading map...</div>
-              )}
-              {/* Legend */}
-              <div className="absolute bottom-4 right-4 bg-background/90 backdrop-blur-sm border rounded-lg p-4 z-[1000]">
-                <h4 className="font-medium mb-2">
-                  {selectedMetric === "percent_against_avg" ? "% Against Avg" : 
-                   selectedMetric === "rain_till_yesterday" ? "Rain till Yesterday (mm)" :
-                   selectedMetric === "rain_last_24hrs" ? "Rain Last 24hrs (mm)" :
-                   "Total Rainfall (mm)"}
-                </h4>
-                <div className="space-y-1 text-xs">
-                  {colorBins.map((bin, i) => (
-                    <div key={i} className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded" style={{ background: bin.color }}></div>
-                      <span>{bin.max === Infinity ? `>${bin.min}` : `${bin.min} - ${bin.max}`}</span>
+        <Tabs defaultValue="rainfall" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 max-w-md mb-6">
+            <TabsTrigger value="rainfall" className="flex items-center gap-2">
+              <Droplets className="w-4 h-4" />
+              Rainfall
+            </TabsTrigger>
+            <TabsTrigger value="reservoir" className="flex items-center gap-2">
+              <Database className="w-4 h-4" />
+              Reservoir
+            </TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="rainfall" className="space-y-4">
+            <div className="mb-4">
+              <h3 className="text-xl font-semibold tracking-tight">Rainfall Map</h3>
+              <p className="text-muted-foreground">
+                Interactive map showing rainfall data across Gujarat
+              </p>
+            </div>
+
+            {/* Map and Time Series Side by Side */}
+            <div className="flex flex-col lg:flex-row w-full gap-4">
+              <div className="lg:w-1/2 h-[500px] lg:h-[calc(100vh-260px)]">
+                <div className="h-full relative border rounded bg-white dark:bg-slate-900">
+                  {geojson ? (
+                    <MapViewWithClick 
+                      key={`${selectedDate}-${selectedMetric}`}
+                      geojson={geojson} 
+                      getTehsilValue={getTehsilValue} 
+                      getColor={getColor} 
+                      onTehsilClick={setSelectedTehsil} 
+                      selectedMetric={selectedMetric} 
+                      selectedDate={selectedDate} 
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">Loading map...</div>
+                  )}
+                  {/* Legend */}
+                  <div className="absolute bottom-4 right-4 bg-background/90 backdrop-blur-sm border rounded-lg p-4 z-[1000]">
+                    <h4 className="font-medium mb-2">
+                      {selectedMetric === "percent_against_avg" ? "% Against Avg" : 
+                       selectedMetric === "rain_till_yesterday" ? "Rain till Yesterday (mm)" :
+                       selectedMetric === "rain_last_24hrs" ? "Rain Last 24hrs (mm)" :
+                       "Total Rainfall (mm)"}
+                    </h4>
+                    <div className="space-y-1 text-xs">
+                      {colorBins.map((bin, i) => (
+                        <div key={i} className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded" style={{ background: bin.color }}></div>
+                          <span>{bin.max === Infinity ? `>${bin.min}` : `${bin.min} - ${bin.max}`}</span>
+                        </div>
+                      ))}
                     </div>
-                  ))}
+                  </div>
+                </div>
+              </div>
+              <div className="lg:w-1/2">
+                {selectedTehsil && allCsvData[selectedTehsil] ? (
+                  <InteractiveRainfallChart
+                    data={availableDates.map(date => ({
+                      date: date, // Use the date string directly
+                      timestamp: parseDateFromString(date).getTime(),
+                      value: allCsvData[selectedTehsil]?.[date] ?? 0,
+                      formattedDate: formatDateLabel(date),
+                    }))}
+                    title={`${selectedTehsil.charAt(0).toUpperCase() + selectedTehsil.slice(1)} - ${metricOptions.find(m => m.value === selectedMetric)?.label}`}
+                    yAxisLabel={metricOptions.find(m => m.value === selectedMetric)?.label || "Value"}
+                    color="#60a5fa"
+                    selectedDate={selectedDate}
+                    onDateSelect={(date) => {
+                      setSelectedDate(date)
+                      setSelectedDateObject(parseDateFromString(date))
+                    }}
+                  >
+                    <CalendarDatePicker
+                      selectedDate={selectedDateObject}
+                      onDateChange={handleDateChange}
+                      availableDates={availableDates}
+                      disabled={loading}
+                    />
+                    <select
+                      className="flex h-10 w-[240px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+                      value={selectedMetric}
+                      onChange={e => {
+                        console.log('Metric changed to:', e.target.value)
+                        setSelectedMetric(e.target.value)
+                      }}
+                    >
+                      {metricOptions.map(opt => (
+                        <option key={opt.value} value={opt.value}>{opt.label}</option>
+                      ))}
+                    </select>
+                  </InteractiveRainfallChart>
+                ) : (
+                  <div className="text-muted-foreground flex items-center justify-center h-[500px]">Select a tehsil to view rainfall data</div>
+                )}
+              </div>
+            </div>
+          </TabsContent>
+
+          <TabsContent value="reservoir" className="space-y-4">
+            <div className="mb-4">
+              <h3 className="text-xl font-semibold tracking-tight">Reservoir Information</h3>
+              <p className="text-muted-foreground">
+                Reservoir storage and water level data across Gujarat
+              </p>
+            </div>
+
+            {/* Placeholder for Reservoir content */}
+            <div className="flex flex-col lg:flex-row w-full gap-4">
+              <div className="lg:w-1/2 h-[500px] lg:h-[calc(100vh-260px)]">
+                <div className="h-full relative border rounded bg-white dark:bg-slate-900 flex items-center justify-center">
+                  <div className="text-center">
+                    <Database className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                    <h4 className="text-lg font-medium mb-2">Reservoir Map</h4>
+                    <p className="text-muted-foreground">Reservoir data visualization coming soon</p>
+                  </div>
+                </div>
+              </div>
+              <div className="lg:w-1/2">
+                <div className="h-[500px] lg:h-[calc(100vh-260px)] border rounded bg-white dark:bg-slate-900 flex items-center justify-center">
+                  <div className="text-center">
+                    <Database className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+                    <h4 className="text-lg font-medium mb-2">Reservoir Charts</h4>
+                    <p className="text-muted-foreground">Reservoir time series data coming soon</p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-          <div className="lg:w-1/2">
-            {selectedTehsil && allCsvData[selectedTehsil] ? (
-              <InteractiveRainfallChart
-                data={availableDates.map(date => ({
-                  date: date, // Use the date string directly
-                  timestamp: parseDateFromString(date).getTime(),
-                  value: allCsvData[selectedTehsil]?.[date] ?? 0,
-                  formattedDate: formatDateLabel(date),
-                }))}
-                title={`${selectedTehsil.charAt(0).toUpperCase() + selectedTehsil.slice(1)} - ${metricOptions.find(m => m.value === selectedMetric)?.label}`}
-                yAxisLabel={metricOptions.find(m => m.value === selectedMetric)?.label || "Value"}
-                color="#60a5fa"
-                selectedDate={selectedDate}
-                onDateSelect={(date) => {
-                  setSelectedDate(date)
-                  setSelectedDateObject(parseDateFromString(date))
-                }}
-              >
-                <CalendarDatePicker
-                  selectedDate={selectedDateObject}
-                  onDateChange={handleDateChange}
-                  availableDates={availableDates}
-                  disabled={loading}
-                />
-                <select
-                  className="flex h-10 w-[240px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                  value={selectedMetric}
-                  onChange={e => setSelectedMetric(e.target.value)}
-                >
-                  {metricOptions.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
-                  ))}
-                </select>
-              </InteractiveRainfallChart>
-            ) : (
-              <div className="text-muted-foreground flex items-center justify-center h-[500px]">Select a tehsil to view rainfall data</div>
-            )}
-          </div>
-        </div>
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   )

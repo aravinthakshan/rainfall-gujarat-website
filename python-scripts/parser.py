@@ -447,12 +447,12 @@ if __name__ == '__main__':
                 print("\n--- GANDHINAGAR DISTRICT CHECK ---")
                 gandhinagar_data = rainfall_df[rainfall_df['district'] == 'Gandhinagar']
                 if not gandhinagar_data.empty:
-                    print(f"✅ SUCCESS: Found {len(gandhinagar_data)} records in Gandhinagar district")
+                    print(f"SUCCESS: Found {len(gandhinagar_data)} records in Gandhinagar district")
                     print("Gandhinagar district talukas found:")
                     for taluka in gandhinagar_data['taluka'].unique():
                         print(f"  - {taluka}")
                     else:
-                        print("❌ ERROR: No Gandhinagar district records found!")
+                        print("ERROR: No Gandhinagar district records found!")
                     
                     print("\n--- Sample from Each Region ---")
                     for region in rainfall_df['region'].unique():

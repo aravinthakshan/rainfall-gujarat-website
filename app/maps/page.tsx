@@ -281,7 +281,7 @@ function getReservoirWarningStations(reservoirData: any[]) {
   return { high, med, low };
 }
 
-const MapsPage: React.FC = () => {
+function MapsPage() {
   const [selectedDate, setSelectedDate] = useState<string>("16th June")
   const [selectedDateObject, setSelectedDateObject] = useState<Date | undefined>(undefined)
   const [selectedMetric, setSelectedMetric] = useState<string>("rain_last_24hrs")
@@ -540,6 +540,52 @@ const MapsPage: React.FC = () => {
         }))
     : []
 
+  // Reservoir warning marquee node
+  const reservoirWarningMarquee = (reservoirData.length > 0 ? (() => {
+    const warnings = getReservoirWarningStations(reservoirData);
+    if (!warnings.high.length && !warnings.med.length && !warnings.low.length) return null;
+    // Prepare all warning boxes in order
+    const warningBoxes = [
+      ...warnings.high.map((station, idx) => (
+        <span key={`high-${station}-${idx}`} className="bg-red-700 text-white font-semibold rounded-lg px-3 py-1 mr-4 inline-block shadow">
+          High Alert: {station}
+        </span>
+      )),
+      ...warnings.med.map((station, idx) => (
+        <span key={`med-${station}-${idx}`} className="bg-orange-600 text-white font-semibold rounded-lg px-3 py-1 mr-4 inline-block shadow">
+          Alert: {station}
+        </span>
+      )),
+      ...warnings.low.map((station, idx) => (
+        <span key={`low-${station}-${idx}`} className="bg-yellow-500 text-black font-semibold rounded-lg px-3 py-1 mr-4 inline-block shadow">
+          Warning: {station}
+        </span>
+      )),
+    ];
+    return (
+      <div className="overflow-hidden whitespace-nowrap w-full bg-black rounded py-2 px-4 mb-2">
+        <div
+          style={{
+            display: 'inline-block',
+            whiteSpace: 'nowrap',
+            animation: 'marquee 30s linear infinite',
+            minWidth: '100%',
+          }}
+        >
+          {warningBoxes}
+          {/* Duplicate for seamless loop */}
+          {warningBoxes}
+        </div>
+        <style>{`
+          @keyframes marquee {
+            0% { transform: translateX(0); }
+            100% { transform: translateX(-50%); }
+          }
+        `}</style>
+      </div>
+    );
+  })() : null);
+
   return (
     <div className="flex flex-col min-h-screen">
       <div className="flex-1 p-4 md:p-8 pt-6">
@@ -674,6 +720,7 @@ const MapsPage: React.FC = () => {
                 Information
               </button>
             </div>
+            {reservoirWarningMarquee}
             <div className="flex flex-col lg:flex-row w-full gap-4 items-stretch">
               <div className="lg:w-1/2 h-[500px] lg:h-[calc(100vh-260px)]">
                 <div className="h-full relative border rounded bg-card">
@@ -692,9 +739,7 @@ const MapsPage: React.FC = () => {
                   )}
                   {/* Legend */}
                   <div className="absolute bottom-4 right-4 bg-background/90 backdrop-blur-sm border rounded-lg p-4 z-[1000]">
-                    <h4 className="font-medium mb-2">
-                      {reservoirMetricOptions.find(m => m.value === selectedReservoirMetric)?.label}
-                    </h4>
+                    <h4 className="font-medium mb-2">% Filling</h4>
                     <div className="space-y-1 text-xs">
                       {reservoirColorBins.map((bin, i) => (
                         <div key={i} className="flex items-center gap-2">
@@ -751,7 +796,6 @@ const MapsPage: React.FC = () => {
                             selectedDate={selectedReservoirDate ? parseDateFromString(selectedReservoirDate) : undefined}
                             onDateChange={date => {
                               if (date) {
-                                // Convert Date to DD/MM/YYYY string
                                 const day = date.getDate().toString().padStart(2, '0');
                                 const month = (date.getMonth() + 1).toString().padStart(2, '0');
                                 const year = date.getFullYear();

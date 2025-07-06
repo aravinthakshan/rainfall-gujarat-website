@@ -1,0 +1,4 @@
+# show latest avialbel data in mongodb as default info 
+# test pdf uplaod logic for reservoir info 
+# see if the processing logic can be fixed.
+# remove any exposed api endpoints 

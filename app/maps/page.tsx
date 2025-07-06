@@ -692,11 +692,30 @@ const MapsPage: React.FC = () => {
                   </div>
                 </div>
               </div>
-              {/* Right column: chart and meta data stacked, stretch to match map height */}
+              {/* Right column: meta data above chart, stretch to match map height */}
               <div className="lg:w-1/2 flex flex-col gap-6 h-full">
                 {selectedReservoirName && reservoirTimeSeries.length > 0 ? (
                   <>
                     <div className="flex flex-col h-full">
+                      {/* Meta Data Card at the top, does not shrink */}
+                      {selectedReservoirName && reservoirMetaData && (
+                        <div className="mb-4 w-full flex-shrink-0">
+                          <h4 className="text-lg font-bold mb-2">Meta Data</h4>
+                          <div className="bg-white rounded-lg shadow p-4 border w-full">
+                            <div className="grid grid-cols-3 gap-x-8 gap-y-2 w-full">
+                              <div className="flex"><span className="font-semibold pr-2">District:</span> <span>{reservoirMetaData["District"]}</span></div>
+                              <div className="flex"><span className="font-semibold pr-2">Taluka:</span> <span>{reservoirMetaData["Taluka"]}</span></div>
+                              <div className="flex"><span className="font-semibold pr-2">Name of Schemes:</span> <span>{reservoirMetaData["Name of Schemes"]}</span></div>
+                              <div className="flex"><span className="font-semibold pr-2">Type:</span> <span>{reservoirMetaData["Type (Gated/Ungated/FuseGate)"]}</span></div>
+                              <div className="flex"><span className="font-semibold pr-2">Overflow Spillway Level (m):</span> <span>{reservoirMetaData["Overflow Spillway Level (m)"]}</span></div>
+                              <div className="flex"><span className="font-semibold pr-2">Full Reservoir Level (m):</span> <span>{reservoirMetaData["Full Reservoi Level (m)"]}</span></div>
+                              <div className="flex"><span className="font-semibold pr-2">Gross Storage (MCM):</span> <span>{reservoirMetaData["Gross Storage (MCM)"]}</span></div>
+                              <div className="flex"><span className="font-semibold pr-2">Live Storage (MCM):</span> <span>{reservoirMetaData["Live Storage (MCM)"]}</span></div>
+                              <div className="flex"><span className="font-semibold pr-2">Dead Storage (MCM):</span> <span>{reservoirMetaData["Dead Storage (MCM)"]}</span></div>
+                            </div>
+                          </div>
+                        </div>
+                      )}
                       <div className="flex-1 flex flex-col">
                         <InteractiveRainfallChart
                           data={reservoirTimeSeries}
@@ -730,25 +749,6 @@ const MapsPage: React.FC = () => {
                           </select>
                         </InteractiveRainfallChart>
                       </div>
-                      {/* Meta Data Card at the bottom, does not shrink */}
-                      {selectedReservoirName && reservoirMetaData && (
-                        <div className="mt-0 w-full flex-shrink-0">
-                          <h4 className="text-lg font-bold mb-2">Meta Data</h4>
-                          <div className="bg-white rounded-lg shadow p-4 border w-full">
-                            <div className="grid grid-cols-3 gap-x-8 gap-y-2 w-full">
-                              <div className="flex"><span className="font-semibold pr-2">District:</span> <span>{reservoirMetaData["District"]}</span></div>
-                              <div className="flex"><span className="font-semibold pr-2">Taluka:</span> <span>{reservoirMetaData["Taluka"]}</span></div>
-                              <div className="flex"><span className="font-semibold pr-2">Name of Schemes:</span> <span>{reservoirMetaData["Name of Schemes"]}</span></div>
-                              <div className="flex"><span className="font-semibold pr-2">Type:</span> <span>{reservoirMetaData["Type (Gated/Ungated/FuseGate)"]}</span></div>
-                              <div className="flex"><span className="font-semibold pr-2">Overflow Spillway Level (m):</span> <span>{reservoirMetaData["Overflow Spillway Level (m)"]}</span></div>
-                              <div className="flex"><span className="font-semibold pr-2">Full Reservoir Level (m):</span> <span>{reservoirMetaData["Full Reservoi Level (m)"]}</span></div>
-                              <div className="flex"><span className="font-semibold pr-2">Gross Storage (MCM):</span> <span>{reservoirMetaData["Gross Storage (MCM)"]}</span></div>
-                              <div className="flex"><span className="font-semibold pr-2">Live Storage (MCM):</span> <span>{reservoirMetaData["Live Storage (MCM)"]}</span></div>
-                              <div className="flex"><span className="font-semibold pr-2">Dead Storage (MCM):</span> <span>{reservoirMetaData["Dead Storage (MCM)"]}</span></div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
                     </div>
                   </>
                 ) : (

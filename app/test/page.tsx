@@ -210,9 +210,9 @@ const TestPage: React.FC = () => {
 
   const getStatusColor = (status: 'success' | 'error' | 'loading') => {
     switch (status) {
-      case 'success': return 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200'
-      case 'error': return 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200'
-      case 'loading': return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200'
+      case 'success': return 'bg-success text-success-foreground'
+      case 'error': return 'bg-destructive text-destructive-foreground'
+      case 'loading': return 'bg-muted text-muted-foreground'
     }
   }
 

@@ -47,16 +47,16 @@ export default function BlogPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-white border-b border-gray-200">
+      <div className="bg-card border-b border-border">
         <div className="w-full px-6 py-8">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">Blog</h1>
-          <p className="text-gray-600 mt-2">Insights and stories from the Water & Climate Lab</p>
+          <h1 className="text-3xl font-bold tracking-tight text-foreground">Blog</h1>
+          <p className="text-muted-foreground mt-2">Insights and stories from the Water & Climate Lab</p>
         </div>
       </div>
       <main className="w-full px-4 py-12">
-        {error && <div className="text-red-500 mb-4">{error}</div>}
+        {error && <div className="text-destructive mb-4">{error}</div>}
         {/* Tiling grid layout for blog posts */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-8">
           {/* Saurashtra Floods blog tile (internal link) */}
@@ -64,8 +64,8 @@ export default function BlogPage() {
             href={saurashtraFloodsPost["link to source"]}
             className="group block"
           >
-            <div className="rounded-lg overflow-hidden shadow hover:shadow-lg transition-shadow bg-white min-w-[340px]">
-              <div className="relative h-64 bg-gray-100">
+            <div className="rounded-lg overflow-hidden shadow hover:shadow-lg transition-shadow bg-card min-w-[340px] border border-border">
+              <div className="relative h-64 bg-muted">
                 <Image
                   src={saurashtraFloodsPost["image source"]}
                   alt={saurashtraFloodsPost["title"]}
@@ -74,7 +74,7 @@ export default function BlogPage() {
                 />
               </div>
               <div className="p-6">
-                <h2 className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors text-center">
+                <h2 className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors text-center">
                   {saurashtraFloodsPost["title"]}
                 </h2>
               </div>
@@ -91,8 +91,8 @@ export default function BlogPage() {
                 rel="noopener noreferrer"
                 className="group block"
               >
-                <div className="rounded-lg overflow-hidden shadow hover:shadow-lg transition-shadow bg-white min-w-[340px]">
-                  <div className="relative h-64 bg-gray-100">
+                <div className="rounded-lg overflow-hidden shadow hover:shadow-lg transition-shadow bg-card min-w-[340px] border border-border">
+                  <div className="relative h-64 bg-muted">
                     <Image
                       src={post["image source"] || "/placeholder.jpg"}
                       alt={post["title"]}
@@ -101,7 +101,7 @@ export default function BlogPage() {
                     />
                   </div>
                   <div className="p-6">
-                    <h2 className="text-xl font-semibold text-gray-900 group-hover:text-blue-600 transition-colors text-center">
+                    <h2 className="text-xl font-semibold text-foreground group-hover:text-primary transition-colors text-center">
                       {post["title"]}
                     </h2>
                   </div>

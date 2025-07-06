@@ -91,7 +91,7 @@ export default function AdminDashboard() {
 
   if (!isAuthenticated) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
           <p className="text-gray-600">Redirecting to login...</p>
         </div>
@@ -100,8 +100,8 @@ export default function AdminDashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200">
+    <div className="min-h-screen bg-background">
+      <header className="bg-card border-b border-border">
         <div className="max-w-6xl mx-auto px-6 py-6">
           <div className="flex justify-between items-center">
             <div>
@@ -160,7 +160,7 @@ export default function AdminDashboard() {
                       type="file"
                       accept=".pdf"
                       onChange={(e) => setPdfFile(e.target.files?.[0] || null)}
-                      className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                      className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-muted file:text-muted-foreground hover:file:bg-muted/80"
                     />
                     <p className="text-sm text-gray-500">Upload a rainfall report PDF to parse and upload to database</p>
                   </div>
@@ -183,7 +183,7 @@ export default function AdminDashboard() {
                   <Button
                     type="submit"
                     disabled={!pdfFile || !pdfDate || isUploading}
-                    className="bg-gray-900 hover:bg-gray-800"
+                    className="bg-primary hover:bg-primary/80"
                   >
                     {isUploading ? "Processing..." : "Upload PDF to Database"}
                   </Button>
@@ -212,7 +212,7 @@ export default function AdminDashboard() {
                       type="file"
                       accept=".csv"
                       onChange={(e) => setCsvFile(e.target.files?.[0] || null)}
-                      className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-gray-100 file:text-gray-700 hover:file:bg-gray-200"
+                      className="file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-medium file:bg-muted file:text-muted-foreground hover:file:bg-muted/80"
                     />
                     <p className="text-sm text-gray-500">Upload a CSV file with reservoir data. (No backend logic yet.)</p>
                   </div>
@@ -230,7 +230,7 @@ export default function AdminDashboard() {
                     />
                     <p className="text-sm text-gray-500">The date this reservoir CSV represents</p>
                   </div>
-                  <Button type="button" disabled className="bg-gray-400 cursor-not-allowed">
+                  <Button type="button" disabled className="bg-muted cursor-not-allowed">
                     Upload CSV (Coming Soon)
                   </Button>
                 </form>

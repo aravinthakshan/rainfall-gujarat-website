@@ -191,7 +191,7 @@ export function TimeSeriesBrushChart({ data, title, yAxisLabel, color, dataId }:
       </div>
 
       {/* Main Chart */}
-      <Card className="bg-slate-800 border-slate-700 p-4">
+      <Card className="bg-card border-border p-4">
         <svg ref={chartRef} width={chartWidth} height={chartHeight} className="overflow-visible">
           {/* Grid lines */}
           <defs>
@@ -282,7 +282,7 @@ export function TimeSeriesBrushChart({ data, title, yAxisLabel, color, dataId }:
       </Card>
 
       {/* Slider */}
-      <Card className="bg-slate-800 border-slate-700 p-2">
+      <Card className="bg-card border-border p-2">
         <svg ref={sliderRef} width={chartWidth} height={sliderHeight} className="cursor-pointer">
           {/* Overview path */}
           <path d={sliderPath} fill="none" stroke="#64748b" strokeWidth="1" opacity="0.6" />

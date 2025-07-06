@@ -88,9 +88,9 @@ export default function InteractiveRainfallChart({
     if (active && payload && payload.length) {
       const dataPoint = payload[0].payload
       return (
-        <div className="bg-slate-800 border border-slate-600 rounded-lg p-3 shadow-lg">
-          <p className="text-slate-200 text-sm font-medium">{`Date: ${dataPoint.formattedDate}`}</p>
-          <p className="text-cyan-400 text-sm">{`${yAxisLabel}: ${dataPoint.value.toFixed(2)}`}</p>
+        <div className="bg-card border border-border rounded-lg p-3 shadow-lg">
+          <p className="text-foreground text-sm font-medium">{`Date: ${dataPoint.formattedDate}`}</p>
+          <p className="text-primary text-sm">{`${yAxisLabel}: ${dataPoint.value.toFixed(2)}`}</p>
         </div>
       )
     }
@@ -105,9 +105,9 @@ export default function InteractiveRainfallChart({
 
   if (!data || data.length === 0) {
     return (
-      <Card className="bg-slate-900 border-slate-700">
+      <Card className="bg-card border-border">
         <CardContent className="flex items-center justify-center h-[400px]">
-          <p className="text-slate-400">No data available</p>
+          <p className="text-muted-foreground">No data available</p>
         </CardContent>
       </Card>
     )
@@ -126,21 +126,21 @@ export default function InteractiveRainfallChart({
           {children}
         </div>
       )}
-      <Card className="bg-slate-900 border-slate-700">
+      <Card className="bg-card border-border">
         <CardHeader className="pb-4">
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-slate-100 text-lg">
+              <CardTitle className="text-foreground text-lg">
                 {title}
               </CardTitle>
-              <CardDescription className="text-slate-400 mt-2">
+              <CardDescription className="text-muted-foreground mt-2">
                 Interactive rainfall timeline with zoom and selection capabilities
               </CardDescription>
             </div>
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full" style={{ backgroundColor: color }}></div>
-                <span className="text-slate-300 text-sm">{yAxisLabel}</span>
+                <span className="text-muted-foreground text-sm">{yAxisLabel}</span>
               </div>
             </div>
           </div>
@@ -206,7 +206,7 @@ export default function InteractiveRainfallChart({
       </Card>
 
       {/* Timeline Scrubber */}
-      <Card className="bg-slate-900 border-slate-700">
+      <Card className="bg-card border-border">
         <CardContent className="pt-4 pb-4">
           <div className="h-[60px]">
             <ResponsiveContainer width="100%" height="100%">

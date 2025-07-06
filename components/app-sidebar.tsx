@@ -27,7 +27,7 @@ export function AppSidebar() {
   return (
     <Sidebar>
       <SidebarHeader className="py-4">
-        <div className="flex items-center justify-center w-full px-4 bg-white">
+        <div className="flex items-center justify-center w-full px-4 bg-card">
           <Image src="/logo.png" alt="Water & Climate Lab Logo" width={220} height={60} priority />
         </div>
       </SidebarHeader>

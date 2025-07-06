@@ -58,10 +58,10 @@ export default function PostPage({ params }: { params: { slug: string } }) {
 
   if (!post) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+      <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="text-center">
-          <h1 className="text-2xl font-medium text-gray-900 mb-4">Post not found</h1>
-          <Link href="/" className="text-gray-600 hover:text-gray-900">
+          <h1 className="text-2xl font-medium text-foreground mb-4">Post not found</h1>
+          <Link href="/" className="text-muted-foreground hover:text-foreground">
             Return to home
           </Link>
         </div>
@@ -70,16 +70,16 @@ export default function PostPage({ params }: { params: { slug: string } }) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200">
+    <div className="min-h-screen bg-background">
+      <header className="bg-card border-b border-border">
         <div className="max-w-4xl mx-auto px-6 py-6">
-          <Link href="/" className="inline-flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-4">
+          <Link href="/" className="inline-flex items-center gap-2 text-muted-foreground hover:text-foreground mb-4">
             <ArrowLeft className="w-4 h-4" />
             Back to posts
           </Link>
-          <h1 className="text-3xl font-light text-gray-900">{post.title}</h1>
+          <h1 className="text-3xl font-light text-foreground">{post.title}</h1>
           <div className="flex items-center gap-4 mt-4">
-            <time className="text-gray-500">
+            <time className="text-muted-foreground">
               {new Date(post.date).toLocaleDateString("en-US", {
                 year: "numeric",
                 month: "long",
@@ -88,7 +88,7 @@ export default function PostPage({ params }: { params: { slug: string } }) {
             </time>
             <div className="flex gap-2">
               {post.tags.map((tag) => (
-                <Badge key={tag} variant="secondary" className="bg-gray-100 text-gray-700">
+                <Badge key={tag} variant="secondary" className="bg-muted text-muted-foreground">
                   {tag}
                 </Badge>
               ))}
@@ -98,9 +98,9 @@ export default function PostPage({ params }: { params: { slug: string } }) {
       </header>
 
       <main className="max-w-4xl mx-auto px-6 py-12">
-        <Card className="border-gray-200">
+        <Card className="border-border">
           <CardContent className="p-8">
-            <div className="prose prose-gray max-w-none">
+            <div className="prose prose-foreground max-w-none">
               <div dangerouslySetInnerHTML={{ __html: post.content.replace(/\n/g, "<br>") }} />
             </div>
           </CardContent>

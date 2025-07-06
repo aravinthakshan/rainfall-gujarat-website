@@ -25,8 +25,8 @@ const posts = [
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200">
+    <div className="min-h-screen bg-background">
+      <header className="bg-card border-b border-border">
         <div className="max-w-4xl mx-auto px-6 py-8">
           <h1 className="text-3xl font-light text-gray-900">Research Blog</h1>
           <p className="text-gray-600 mt-2">Insights and findings from academic research</p>
@@ -55,7 +55,7 @@ export default function HomePage() {
                 <p className="text-gray-600 mb-4">{post.excerpt}</p>
                 <div className="flex flex-wrap gap-2">
                   {post.tags.map((tag) => (
-                    <Badge key={tag} variant="secondary" className="bg-gray-100 text-gray-700 hover:bg-gray-200">
+                    <Badge key={tag} variant="secondary" className="bg-muted text-muted-foreground hover:bg-muted/80">
                       {tag}
                     </Badge>
                   ))}

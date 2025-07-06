@@ -576,7 +576,7 @@ const MapsPage: React.FC = () => {
             {/* Map and Time Series Side by Side */}
             <div className="flex flex-col lg:flex-row w-full gap-4 items-stretch">
               <div className="lg:w-1/2 h-[500px] lg:h-[calc(100vh-260px)]">
-                <div className="h-full relative border rounded bg-white dark:bg-slate-900">
+                <div className="h-full relative border rounded bg-card">
                   {geojson ? (
                     <MapViewWithClick 
                       key={`${selectedDate}-${selectedMetric}`}
@@ -662,7 +662,7 @@ const MapsPage: React.FC = () => {
             </div>
             <div className="flex flex-col lg:flex-row w-full gap-4 items-stretch">
               <div className="lg:w-1/2 h-[500px] lg:h-[calc(100vh-260px)]">
-                <div className="h-full relative border rounded bg-white dark:bg-slate-900">
+                <div className="h-full relative border rounded bg-card">
                   {reservoirGeojson && reservoirData.length > 0 && geojson ? (
                     <ReservoirMap
                       geojson={reservoirGeojson}
@@ -701,7 +701,7 @@ const MapsPage: React.FC = () => {
                       {selectedReservoirName && reservoirMetaData && (
                         <div className="mb-4 w-full flex-shrink-0">
                           <h4 className="text-lg font-bold mb-2">Meta Data</h4>
-                          <div className="bg-white rounded-lg shadow p-4 border w-full">
+                          <div className="bg-card rounded-lg shadow p-4 border w-full">
                             <div className="grid grid-cols-3 gap-x-8 gap-y-2 w-full">
                               <div className="flex"><span className="font-semibold pr-2">District:</span> <span>{reservoirMetaData["District"]}</span></div>
                               <div className="flex"><span className="font-semibold pr-2">Taluka:</span> <span>{reservoirMetaData["Taluka"]}</span></div>
@@ -752,7 +752,7 @@ const MapsPage: React.FC = () => {
                     </div>
                   </>
                 ) : (
-                  <div className="h-[500px] lg:h-[calc(100vh-260px)] border rounded bg-white dark:bg-slate-900 flex items-center justify-center">
+                  <div className="h-[500px] lg:h-[calc(100vh-260px)] border rounded bg-card flex items-center justify-center">
                     <div className="text-center">
                       <h4 className="text-lg font-medium mb-2">Reservoir Data</h4>
                       <p className="text-muted-foreground">Click a reservoir marker to view time series</p>

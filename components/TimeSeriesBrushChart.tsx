@@ -19,7 +19,7 @@ interface TimeSeriesBrushChartProps {
 export function TimeSeriesBrushChart({ data, title, yAxisLabel, color, dataId }: TimeSeriesBrushChartProps) {
   const chartRef = useRef<SVGSVGElement>(null)
   const sliderRef = useRef<SVGSVGElement>(null)
-  const [selectedRange, setSelectedRange] = useState({ start: 0.7, end: 1.0 })
+  const [selectedRange, setSelectedRange] = useState({ start: 0, end: 1.0 })
   const [isDragging, setIsDragging] = useState<"start" | "end" | "middle" | null>(null)
   const [dragStart, setDragStart] = useState(0)
 

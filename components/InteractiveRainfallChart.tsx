@@ -63,10 +63,9 @@ export default function InteractiveRainfallChart({
   const prevSelectedDateRef = useRef<string | undefined>()
   const chartRef = useRef<HTMLDivElement>(null)
 
-  // Calculate brush range to show last 10 data points by default
+  // Calculate brush range to show the full range by default
   const defaultBrushRange: [number, number] = useMemo(() => {
-    if (data.length <= 10) return [0, data.length - 1]
-    return [data.length - 10, data.length - 1]
+    return [0, Math.max(0, data.length - 1)]
   }, [data.length])
 
   // Initialize brush range

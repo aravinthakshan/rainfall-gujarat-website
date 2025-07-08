@@ -455,7 +455,8 @@ function MapsPage() {
           timestamp: parseDateFromString(row.date).getTime(),
           value: Number(row[selectedReservoirMetric]) || 0,
           formattedDate: row.date,
-        })).sort((a, b) => a.timestamp - b.timestamp);
+        }))
+        .sort((a, b) => a.timestamp - b.timestamp);
         setReservoirTimeSeries(series);
       });
   }, [selectedReservoirName, selectedReservoirMetric]);
@@ -539,13 +540,15 @@ function MapsPage() {
     console.log('Chart should update - Metric:', selectedMetric, 'Tehsil:', selectedTehsil, 'Available dates:', availableDates.length)
   }, [selectedMetric, selectedTehsil, availableDates.length])
 
-  // Time series data for selected tehsil
+  // --- Rainfall time series: ensure sorting and correct date type ---
   const timeSeries = selectedTehsil && allCsvData[selectedTehsil]
     ? [...availableDates]
         .sort((a, b) => parseDateFromString(a).getTime() - parseDateFromString(b).getTime())
         .map(date => ({
-          date: formatDateLabel(date),
+          date: date, // Use the date string directly
+          timestamp: parseDateFromString(date).getTime(),
           value: allCsvData[selectedTehsil]?.[date] ?? 0,
+          formattedDate: formatDateLabel(date),
         }))
     : []
 
@@ -681,12 +684,7 @@ function MapsPage() {
               <div className="lg:w-1/2 flex flex-col h-[500px] lg:h-[calc(100vh-260px)]">
                 {selectedTehsil && allCsvData[selectedTehsil] ? (
                   <InteractiveRainfallChart
-                    data={availableDates.map(date => ({
-                      date: date, // Use the date string directly
-                      timestamp: parseDateFromString(date).getTime(),
-                      value: allCsvData[selectedTehsil]?.[date] ?? 0,
-                      formattedDate: formatDateLabel(date),
-                    }))}
+                    data={timeSeries}
                     title={`${selectedTehsil.charAt(0).toUpperCase() + selectedTehsil.slice(1)} - ${metricOptions.find(m => m.value === selectedMetric)?.label}`}
                     yAxisLabel={metricOptions.find(m => m.value === selectedMetric)?.label || "Value"}
                     color="#60a5fa"

@@ -445,21 +445,17 @@ function MapsPage() {
       setReservoirTimeSeries([]);
       return;
     }
-    // Fetch all reservoir data for the selected name
-    fetch('/api/reservoir-data')
-      .then(res => res.json())
-      .then((data: any[]) => {
-        const filtered = data.filter(row => row["Name of Schemes"]?.toLowerCase() === selectedReservoirName.toLowerCase());
-        const series = filtered.map(row => ({
-          date: row.date,
-          timestamp: parseDateFromString(row.date).getTime(),
-          value: Number(row[selectedReservoirMetric]) || 0,
-          formattedDate: row.date,
-        }))
-        .sort((a, b) => a.timestamp - b.timestamp);
-        setReservoirTimeSeries(series);
-      });
-  }, [selectedReservoirName, selectedReservoirMetric]);
+    // Use already-fetched allReservoirData for the selected name
+    const filtered = allReservoirData.filter(row => row["Name of Schemes"]?.toLowerCase() === selectedReservoirName.toLowerCase());
+    const series = filtered.map(row => ({
+      date: row.date,
+      timestamp: parseDateFromString(row.date).getTime(),
+      value: Number(row[selectedReservoirMetric]) || 0,
+      formattedDate: row.date,
+    }))
+    .sort((a, b) => a.timestamp - b.timestamp);
+    setReservoirTimeSeries(series);
+  }, [selectedReservoirName, selectedReservoirMetric, allReservoirData]);
 
   // Set default selected reservoir on data/metric change (like rainfall)
   useEffect(() => {

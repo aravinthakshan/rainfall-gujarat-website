@@ -769,7 +769,7 @@ function MapsPage() {
                       {/* Meta Data Card at the top, does not shrink */}
                       {selectedReservoirName && reservoirMetaData && (
                         <div className="mb-4 w-full flex-shrink-0">
-                          <h4 className="text-lg font-bold mb-2">Meta Data</h4>
+                          <h4 className="text-lg font-bold mb-2">{selectedReservoirName} Information</h4>
                           <div className="bg-card rounded-lg shadow p-4 border w-full">
                             <div className="grid grid-cols-3 gap-x-4 gap-y-2 w-full">
                               <div className="flex"><span className="font-semibold pr-2">District:</span> <span>{reservoirMetaData["District"]}</span></div>

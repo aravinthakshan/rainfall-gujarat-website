@@ -254,8 +254,8 @@ const reservoirColorBins = [
   { min: 20, max: 40, color: "#41b6c4" },    // greenish blue
   { min: 40, max: 60, color: "#ffffb2" },    // yellow
   { min: 60, max: 80, color: "#fe9929" },    // orange
-  { min: 80, max: 100, color: "#de2d26" },   // red
-  { min: 100, max: Infinity, color: "#a50f15" }, // dark red for >100%
+  { min: 80, max: 90, color: "#de2d26" },    // red
+  { min: 90, max: 100, color: "#a50f15" },   // dark red
 ];
 
 function getReservoirColor(value: number) {

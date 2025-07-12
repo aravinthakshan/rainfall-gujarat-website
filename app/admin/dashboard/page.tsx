@@ -13,6 +13,7 @@ import { Upload, FileText, Calendar, LogOut, User, FileText as FilePdf } from "l
 import { useAuth } from "../../../research-blog/lib/auth-context"
 import { uploadMarkdownPost, uploadPDFFile } from "./actions"
 import { CalendarDatePicker } from "@/components/ui/calendar-date-picker"
+import PerformanceMonitor from "./performance"
 
 export default function AdminDashboard() {
   const [markdownFile, setMarkdownFile] = useState<File | null>(null)
@@ -78,12 +79,37 @@ export default function AdminDashboard() {
     formData.append("date", dateString)
 
     try {
+      console.log(`Processing PDF: ${pdfFile.name}, Size: ${pdfFile.size} bytes, Date: ${dateString}`)
       const result = await uploadPDFFile(formData)
       alert(result.message)
       setPdfFile(null)
       setPdfDate(undefined)
     } catch (error) {
-      alert(`Error processing PDF file: ${error}`)
+      console.error('PDF upload error:', error)
+      
+      // Provide more specific error messages
+      let errorMessage = 'Error processing PDF file'
+      if (error instanceof Error) {
+        if (error.message.includes('Python is not available')) {
+          errorMessage = 'Python is not available in the production environment. Please contact the administrator.'
+        } else if (error.message.includes('Missing required Python package')) {
+          errorMessage = 'Required Python packages are not installed. Please contact the administrator.'
+        } else if (error.message.includes('PDF processing timed out')) {
+          errorMessage = 'PDF processing took too long. Please try with a smaller file.'
+        } else if (error.message.includes('PDF file size must be less than 10MB')) {
+          errorMessage = 'PDF file is too large. Please use a file smaller than 10MB.'
+        } else if (error.message.includes('File must be a PDF')) {
+          errorMessage = 'Please upload a valid PDF file.'
+        } else if (error.message.includes('read-only file system') || error.message.includes('EROFS')) {
+          errorMessage = 'Serverless environment detected. PDF processing requires a writable environment. Please contact administrator to configure external PDF processing service.'
+        } else if (error.message.includes('Production environment has read-only file system')) {
+          errorMessage = 'PDF processing is not available in this environment. Please use CSV upload or contact administrator for alternative solutions.'
+        } else {
+          errorMessage = `Error: ${error.message}`
+        }
+      }
+      
+      alert(errorMessage)
     } finally {
       setIsUploading(false)
     }
@@ -128,17 +154,19 @@ export default function AdminDashboard() {
       </header>
 
       <main className="max-w-6xl mx-auto px-6 py-8">
-        <Tabs defaultValue="pdf" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 max-w-md">
-            <TabsTrigger value="pdf" className="flex items-center gap-2">
-              <FilePdf className="w-4 h-4" />
-              Rainfall PDF Upload
-            </TabsTrigger>
-            <TabsTrigger value="reservoir-csv" className="flex items-center gap-2">
-              <Upload className="w-4 h-4" />
-              Reservoir CSV Upload
-            </TabsTrigger>
-          </TabsList>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+          <div className="lg:col-span-2">
+            <Tabs defaultValue="pdf" className="space-y-6">
+              <TabsList className="grid w-full grid-cols-2 max-w-md">
+                <TabsTrigger value="pdf" className="flex items-center gap-2">
+                  <FilePdf className="w-4 h-4" />
+                  Rainfall PDF Upload
+                </TabsTrigger>
+                <TabsTrigger value="reservoir-csv" className="flex items-center gap-2">
+                  <Upload className="w-4 h-4" />
+                  Reservoir CSV Upload
+                </TabsTrigger>
+              </TabsList>
 
           <TabsContent value="pdf">
             <Card>
@@ -238,6 +266,12 @@ export default function AdminDashboard() {
             </Card>
           </TabsContent>
         </Tabs>
+      </div>
+      
+      <div className="lg:col-span-1">
+        <PerformanceMonitor />
+      </div>
+    </div>
       </main>
     </div>
   )

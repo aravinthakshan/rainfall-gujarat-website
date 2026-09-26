@@ -146,7 +146,6 @@ Environment variables (set in Vercel):
 | Variable | Used for |
 |---|---|
 | `MONGODB_URI` | API routes under `app/api/*` |
-| `NEXT_PUBLIC_GOOGLE_SHEETS_API_KEY` | loading external posts on `/blog` from the Google Sheet |
 
 API routes (all read-only):
 
@@ -160,4 +159,9 @@ API routes (all read-only):
 
 ## Blog
 
-External posts come from a Google Sheet with columns `title`, `image source`, `link to source`, and optionally `summary` and `date`. Rows missing a title or link are skipped. Internal posts live under `app/blog/<slug>/page.tsx` and are listed in `internalPosts` in `app/blog/blog-page.tsx`.
+Posts are listed in [`content/posts.ts`](content/posts.ts); there's no external service or API key. Each entry has a `title`, an `href`, and optionally an `image`, `summary` and `date`.
+
+- **A post written on this site:** create `app/blog/<slug>/page.tsx`, then add an entry with `href: "/blog/<slug>"`.
+- **A post hosted elsewhere:** add an entry with the full `https://…` URL. It opens in a new tab.
+
+Put images in `public/` and reference them as `/my-image.jpg`.

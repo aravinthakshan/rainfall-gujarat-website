@@ -60,8 +60,8 @@ const teamMembers: Member[] = [
 const sources = [
   {
     name: "Taluka rainfall",
-    detail: "State Emergency Operation Centre (SEOC), Gujarat — daily 24-hour rainfall report",
-    href: "https://www.gujaratweather.com/?page_id=14577",
+    detail: "State Emergency Operation Centre (SEOC), Gujarat — daily 24-hour rainfall report, via the GSDMA archive",
+    href: "https://gsdma.org/rainfalldata-2?Type=2",
   },
   {
     name: "Reservoir storage",

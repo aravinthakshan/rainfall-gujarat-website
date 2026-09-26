@@ -541,7 +541,7 @@ export default function MapsPage() {
       {tab === "rainfall" ? <RainfallView geojson={talukas} /> : reservoirPoints && <ReservoirView points={reservoirPoints} boundary={talukas} />}
 
       <p className="mt-8 text-xs text-muted-foreground">
-        Sources: State Emergency Operation Centre, Gujarat (taluka rainfall) · Narmada, Water Resources, Water Supply &amp;
+        Sources: State Emergency Operation Centre, Gujarat, via GSDMA (taluka rainfall) · Narmada, Water Resources, Water Supply &amp;
         Kalpsar Department (dam storage). Rainfall intensity classes follow IMD.
       </p>
     </div>

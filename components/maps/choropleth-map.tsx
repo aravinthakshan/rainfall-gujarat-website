@@ -5,6 +5,7 @@ import { MapContainer, TileLayer, GeoJSON, Pane } from "react-leaflet"
 import type { GeoJSON as LeafletGeoJSON, Layer, PathOptions } from "leaflet"
 import { useTheme } from "@/components/theme-provider"
 import { colorFor, fmt, talukaKey, titleCase } from "@/lib/rain"
+import ClickToInteract from "./click-to-interact"
 
 const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas"
 // Keyless grey basemaps; labels come as a separate layer drawn above the data.
@@ -83,6 +84,7 @@ export default function ChoroplethMap({ geojson, values, thresholds, unit, selec
       className="h-full w-full"
     >
       <BaseLayers dark={dark} />
+      <ClickToInteract />
       <GeoJSON
         ref={layerRef as any}
         data={geojson}

@@ -4,6 +4,7 @@ import { MapContainer, GeoJSON, CircleMarker, Tooltip } from "react-leaflet"
 import { useTheme } from "@/components/theme-provider"
 import { colorFor, fmt, FILLING, normalize } from "@/lib/rain"
 import { BaseLayers } from "./choropleth-map"
+import ClickToInteract from "./click-to-interact"
 
 type Props = {
   points: any // Reservoir_ID_Location.geojson
@@ -20,6 +21,7 @@ export default function ReservoirMap({ points, boundary, rows, selected, onSelec
   return (
     <MapContainer center={[22.4, 71.6]} zoom={7} zoomSnap={0.25} minZoom={6} scrollWheelZoom={false} className="h-full w-full">
       <BaseLayers dark={dark} />
+      <ClickToInteract />
       {boundary && (
         <GeoJSON
           key={dark ? "bd" : "bl"}

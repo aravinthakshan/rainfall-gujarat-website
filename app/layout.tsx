@@ -1,12 +1,12 @@
 import type React from "react"
 import type { Metadata } from "next"
-import { Inter } from "next/font/google"
+import Script from "next/script"
+import { Geist } from "next/font/google"
 import "./globals.css"
-import { ThemeProvider } from "@/components/theme-provider"
+import { ThemeProvider, themeInitScript } from "@/components/theme-provider"
 import { TopNavigation } from "@/components/top-nav"
-import { AuthProvider } from "../research-blog/lib/auth-context"
 
-const inter = Inter({ subsets: ["latin"] })
+const geist = Geist({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
   title: "RainInsight - Water & Climate Lab",
@@ -76,14 +76,15 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-          <AuthProvider>
+      <body className={`${geist.className} antialiased`}>
+        <Script id="theme-init" strategy="beforeInteractive">
+          {themeInitScript}
+        </Script>
+        <ThemeProvider>
             <div className="min-h-screen w-full flex flex-col">
               <TopNavigation />
               <main className="flex-1 w-full">{children}</main>
             </div>
-          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -4,25 +4,25 @@
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 240 10% 3.9%;
+    --background: 0 0% 99%;
+    --foreground: 0 0% 9%;
     --card: 0 0% 100%;
-    --card-foreground: 240 10% 3.9%;
+    --card-foreground: 0 0% 9%;
     --popover: 0 0% 100%;
-    --popover-foreground: 240 10% 3.9%;
-    --primary: 221.2 83.2% 53.3%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 240 4.8% 95.9%;
-    --secondary-foreground: 240 5.9% 10%;
-    --muted: 240 4.8% 95.9%;
-    --muted-foreground: 240 3.8% 46.1%;
-    --accent: 240 4.8% 95.9%;
-    --accent-foreground: 240 5.9% 10%;
+    --popover-foreground: 0 0% 9%;
+    --primary: 214 84% 42%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 0 0% 94%;
+    --secondary-foreground: 0 0% 9%;
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 42%;
+    --accent: 0 0% 94%;
+    --accent-foreground: 0 0% 9%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 5.9% 90%;
-    --input: 240 5.9% 90%;
-    --ring: 221.2 83.2% 53.3%;
+    --border: 0 0% 89%;
+    --input: 0 0% 86%;
+    --ring: 214 84% 42%;
     --radius: 0.5rem;
 
     /* Sidebar variables */
@@ -36,33 +36,33 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
 
     /* Chart colors */
-    --chart-1: 221.2 83.2% 53.3%;
-    --chart-2: 142.1 76.2% 36.3%;
-    --chart-3: 47.9 95.8% 53.1%;
-    --chart-4: 316.6 73.1% 52.4%;
-    --chart-5: 189.5 75.5% 40.8%;
+    --chart-1: 214 84% 42%;
+    --chart-2: 0 0% 45%;
+    --chart-3: 199 89% 48%;
+    --chart-4: 0 0% 70%;
+    --chart-5: 221 60% 25%;
   }
 
   .dark {
-    --background: 240 10% 3.9%;
-    --foreground: 0 0% 98%;
-    --card: 240 10% 3.9%;
-    --card-foreground: 0 0% 98%;
-    --popover: 240 10% 3.9%;
-    --popover-foreground: 0 0% 98%;
-    --primary: 217.2 91.2% 59.8%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 240 3.7% 15.9%;
-    --secondary-foreground: 0 0% 98%;
-    --muted: 240 3.7% 15.9%;
-    --muted-foreground: 240 5% 64.9%;
-    --accent: 240 3.7% 15.9%;
-    --accent-foreground: 0 0% 98%;
+    --background: 0 0% 7%;
+    --foreground: 0 0% 96%;
+    --card: 0 0% 9%;
+    --card-foreground: 0 0% 96%;
+    --popover: 0 0% 9%;
+    --popover-foreground: 0 0% 96%;
+    --primary: 212 90% 60%;
+    --primary-foreground: 0 0% 7%;
+    --secondary: 0 0% 15%;
+    --secondary-foreground: 0 0% 96%;
+    --muted: 0 0% 14%;
+    --muted-foreground: 0 0% 64%;
+    --accent: 0 0% 15%;
+    --accent-foreground: 0 0% 96%;
     --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 240 3.7% 15.9%;
-    --input: 240 3.7% 15.9%;
-    --ring: 224.3 76.3% 48%;
+    --border: 0 0% 17%;
+    --input: 0 0% 20%;
+    --ring: 212 90% 60%;
 
     /* Sidebar variables */
     --sidebar-background: 240 5.9% 10%;
@@ -75,11 +75,11 @@
     --sidebar-ring: 224.3 76.3% 48%;
 
     /* Chart colors */
-    --chart-1: 217.2 91.2% 59.8%;
-    --chart-2: 142.1 70.6% 45.3%;
-    --chart-3: 47.9 95.8% 53.1%;
-    --chart-4: 316.6 73.1% 52.4%;
-    --chart-5: 189.5 75.5% 40.8%;
+    --chart-1: 212 90% 60%;
+    --chart-2: 0 0% 70%;
+    --chart-3: 199 89% 60%;
+    --chart-4: 0 0% 45%;
+    --chart-5: 214 70% 80%;
   }
 }
 
@@ -91,3 +91,24 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Leaflet tooltips follow the site theme */
+.leaflet-tooltip.map-tooltip {
+  background: hsl(var(--popover));
+  color: hsl(var(--popover-foreground));
+  border: 1px solid hsl(var(--border));
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgb(0 0 0 / 0.12);
+  padding: 6px 10px;
+  font-size: 12px;
+  line-height: 1.4;
+}
+.leaflet-tooltip.map-tooltip::before { display: none; }
+.leaflet-container { font-family: inherit; background: hsl(var(--muted)); }
+.leaflet-control-attribution { font-size: 10px; }
+
+/* Range slider under charts */
+.series-brush .recharts-brush-texts text { fill: hsl(var(--muted-foreground)); font-size: 11px; }
+.series-brush .recharts-brush-traveller rect { fill: hsl(var(--primary)); rx: 2; }
+.series-brush .recharts-brush-slide { fill: hsl(var(--primary)); fill-opacity: 0.12; }
+.series-brush > rect { stroke: hsl(var(--border)); rx: 6; }

@@ -2,137 +2,110 @@
 
 import { useEffect, useState } from "react"
 import Link from "next/link"
-import Image from "next/image"
-import { ExternalLink } from "lucide-react"
+import { ArrowUpRight } from "lucide-react"
 
 const SHEET_API_URL = `https://sheets.googleapis.com/v4/spreadsheets/1q8KX7jqpW4T9hdX-2OUDt7Pkk5eYOYNVbbCzIP7mDA8/values/Sheet1?key=${process.env.NEXT_PUBLIC_GOOGLE_SHEETS_API_KEY}`
 
-function parseSheetData(values: string[][]) {
+type Post = {
+  title: string
+  image: string
+  href: string
+  summary?: string
+  date?: string
+  external: boolean
+}
+
+// Posts that live in this repo
+const internalPosts: Post[] = [
+  {
+    title: "Saurashtra Submerged: A Wake-Up Call from the June 2025 Floods",
+    summary:
+      "Over 300 mm of rain in 48 hours across Botad, Amreli and Bhavnagar — what rainfall, SAR imagery and Shetrunji dam data show about the event.",
+    image: "/Rainfall_map.jpg",
+    href: "/blog/saurashtra-floods-2025",
+    date: "June 2025",
+    external: false,
+  },
+]
+
+// Sheet columns: title, image source, link to source, (optional) summary, date
+function parseSheetData(values: string[][]): Post[] {
   if (!values || values.length < 2) return []
   const headers = values[0].map((h) => h.trim().toLowerCase())
   return values
     .slice(1)
-    .filter((row) => row.length > 0 && row.some((cell) => cell.trim() !== ""))
-    .map((row) => {
-      const obj: Record<string, string> = {}
-      headers.forEach((header, i) => {
-        obj[header] = row[i] || ""
-      })
-      return obj
-    })
+    .map((row) => Object.fromEntries(headers.map((h, i) => [h, (row[i] || "").trim()])))
+    .filter((r) => r["title"] && r["link to source"])
+    .map((r) => ({
+      title: r["title"],
+      image: r["image source"],
+      href: r["link to source"],
+      summary: r["summary"] || r["description"],
+      date: r["date"],
+      external: true,
+    }))
+}
+
+function PostRow({ post }: { post: Post }) {
+  const inner = (
+    <article className="group flex gap-4 py-6 sm:gap-6">
+      <div className="h-20 w-28 shrink-0 overflow-hidden rounded-md bg-muted sm:h-24 sm:w-36">
+        {post.image && (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={post.image} alt="" loading="lazy" className="h-full w-full object-cover" />
+        )}
+      </div>
+      <div className="min-w-0 flex-1">
+        <h2 className="font-medium leading-snug group-hover:text-primary">
+          {post.title}
+          {post.external && <ArrowUpRight className="ml-1 inline h-3.5 w-3.5 text-muted-foreground" />}
+        </h2>
+        {post.summary && <p className="mt-1 line-clamp-2 text-sm text-muted-foreground">{post.summary}</p>}
+        {post.date && <p className="mt-2 text-xs text-muted-foreground">{post.date}</p>}
+      </div>
+    </article>
+  )
+  return post.external ? (
+    <a href={post.href} target="_blank" rel="noopener noreferrer">
+      {inner}
+    </a>
+  ) : (
+    <Link href={post.href}>{inner}</Link>
+  )
 }
 
 export default function BlogPage() {
-  const [posts, setPosts] = useState<Array<Record<string, string>>>([])
-  const [error, setError] = useState<string | null>(null)
+  const [posts, setPosts] = useState<Post[]>([])
   const [loading, setLoading] = useState(true)
-
-  // Saurashtra Floods blog post (internal)
-  const saurashtraFloodsPost = {
-    title: "Saurashtra Submerged: A Wake-Up Call from the June 2025 Floods",
-    "image source": "/Rainfall_map.jpg",
-    "link to source": "/blog/saurashtra-floods-2025",
-    internal: true,
-  }
 
   useEffect(() => {
     fetch(SHEET_API_URL)
-      .then((res) => {
-        if (!res.ok) throw new Error("Failed to fetch blog posts")
-        return res.json()
-      })
-      .then((data) => {
-        setPosts(parseSheetData(data.values))
-        setLoading(false)
-      })
-      .catch((err) => {
-        setError(err.message)
-        setLoading(false)
-      })
+      .then((res) => (res.ok ? res.json() : Promise.reject(res.status)))
+      .then((data) => setPosts(parseSheetData(data.values)))
+      .catch((err) => console.warn("Blog sheet unavailable:", err))
+      .finally(() => setLoading(false))
   }, [])
 
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <div className="bg-card border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 py-12">
-          <h1 className="text-4xl font-bold text-foreground text-left">Blog</h1>
-          <p className="text-muted-foreground mt-2 text-left">Insights and stories from the Water & Climate Lab</p>
-        </div>
+    <div className="mx-auto max-w-3xl px-4 py-10 sm:py-14">
+      <h1 className="text-3xl font-semibold tracking-tight">Blog</h1>
+      <p className="mt-2 text-muted-foreground">Notes and case studies from the Water & Climate Lab.</p>
+
+      <div className="mt-6 divide-y border-y">
+        {[...internalPosts, ...posts].map((post) => (
+          <PostRow key={post.href} post={post} />
+        ))}
+        {loading &&
+          [0, 1].map((i) => (
+            <div key={i} className="flex animate-pulse gap-6 py-6">
+              <div className="h-24 w-36 rounded-md bg-muted" />
+              <div className="flex-1 space-y-2 pt-1">
+                <div className="h-4 w-3/4 rounded bg-muted" />
+                <div className="h-3 w-1/2 rounded bg-muted" />
+              </div>
+            </div>
+          ))}
       </div>
-      <main className="max-w-7xl mx-auto px-6 py-12">
-        {error && (
-          <div className="mb-8 p-4 bg-destructive/10 border border-destructive/30 rounded-lg">
-            <p className="text-destructive">Error: {error}</p>
-          </div>
-        )}
-        {loading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="animate-pulse">
-                <div className="bg-muted h-56 rounded-t-lg" />
-                <div className="bg-card p-6 rounded-b-lg">
-                  <div className="h-5 bg-muted rounded" />
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
-        {!loading && (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
-            {/* Internal Saurashtra Floods Post */}
-            <Link href={saurashtraFloodsPost["link to source"]} className="group">
-              <div className="bg-card rounded-lg shadow-lg hover:shadow-xl transition-shadow overflow-hidden border border-border">
-                <div className="relative h-56">
-                  <Image
-                    src={saurashtraFloodsPost["image source"] || "/placeholder.svg"}
-                    alt={saurashtraFloodsPost.title}
-                    fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-200"
-                  />
-                </div>
-                <div className="p-6">
-                  <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 text-center">
-                    {saurashtraFloodsPost.title}
-                  </h3>
-                </div>
-              </div>
-            </Link>
-            {/* External Posts from Google Sheets */}
-            {posts
-              .filter((post) => post["title"] && post["image source"] && post["link to source"])
-              .map((post: Record<string, string>, idx: number) => (
-                <a key={idx} href={post["link to source"]} target="_blank" rel="noopener noreferrer" className="group">
-                  <div className="bg-card rounded-lg shadow-lg hover:shadow-xl transition-shadow overflow-hidden border border-border">
-                    <div className="relative h-56">
-                      <Image
-                        src={post["image source"] || "/placeholder.svg?height=200&width=400"}
-                        alt={post["title"]}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-200"
-                      />
-                      <div className="absolute top-3 right-3">
-                        <div className="bg-card/90 backdrop-blur-sm rounded-full p-2 border border-border">
-                          <ExternalLink className="w-4 h-4 text-muted-foreground" />
-                        </div>
-                      </div>
-                    </div>
-                    <div className="p-6">
-                      <h3 className="text-lg font-semibold text-foreground group-hover:text-primary transition-colors line-clamp-2 text-center">
-                        {post["title"]}
-                      </h3>
-                    </div>
-                  </div>
-                </a>
-              ))}
-          </div>
-        )}
-        {posts.length === 0 && !loading && (
-          <div className="text-center py-16">
-            <p className="text-muted-foreground">No blog posts found.</p>
-          </div>
-        )}
-      </main>
     </div>
   )
 }

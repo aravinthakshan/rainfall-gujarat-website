@@ -26,3 +26,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 /Rainfall
+# python
+__pycache__/
+.venv/

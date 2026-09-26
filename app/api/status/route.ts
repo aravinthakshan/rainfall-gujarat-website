@@ -22,6 +22,9 @@ export async function GET() {
     });
   } catch (error) {
     console.error('Error fetching status:', error);
-    return NextResponse.json({ error: 'Database unavailable' }, { status: 503 });
+    // Expose the failure type (not credentials) so outages are diagnosable
+    const e = error as Error & { code?: string | number };
+    const reason = String(e?.message ?? e).replace(/\/\/[^@\s]*@/g, '//***@').slice(0, 200);
+    return NextResponse.json({ error: 'Database unavailable', type: e?.name, code: e?.code, reason }, { status: 503 });
   }
 }

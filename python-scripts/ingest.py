@@ -103,10 +103,20 @@ def reservoir_url(d: date):
     return f"https://wrd-dam.gujarat.gov.in/downloads/home_pdf.php?dt={token}"
 
 
+def reservoir_urls(d: date):
+    """The dam portal only answers requests from India. When DAM_PROXY_URL is
+    set (GitHub Actions), fetch through the site's /api/dam-pdf route, which
+    runs in Vercel's Mumbai region; the portal itself is the fallback."""
+    proxy = os.environ.get("DAM_PROXY_URL")
+    if proxy:
+        yield f"{proxy.rstrip('/')}/api/dam-pdf?date={d.isoformat()}"
+    yield reservoir_url(d)
+
+
 def fetch_pdf(urls, dest: Path):
     for url in urls:
         try:
-            r = requests.get(url, headers=HEADERS, timeout=60)
+            r = requests.get(url, headers=HEADERS, timeout=(20, 150))
         except requests.RequestException as e:
             log.warning("  %s -> %s", url, e)
             continue
@@ -236,7 +246,7 @@ def run_for_date(d: date, db, workdir: Path, kinds, min_rows):
         log.info("  rainfall rows: %d", len(rows))
 
     if "reservoir" in kinds:
-        pdf = fetch_pdf([reservoir_url(d)], workdir / f"reservoir_{d}.pdf")
+        pdf = fetch_pdf(reservoir_urls(d), workdir / f"reservoir_{d}.pdf")
         rows = parse_reservoir(pdf, date_str) if pdf else []
         ok = len(rows) >= min_rows["reservoir"]
         if pdf and not ok:

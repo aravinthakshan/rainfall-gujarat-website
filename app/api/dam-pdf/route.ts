@@ -26,7 +26,8 @@ export async function GET(req: NextRequest) {
       cache: 'no-store',
     });
   } catch (e) {
-    return new Response(`upstream unreachable: ${(e as Error).name}`, { status: 504 });
+    const cause = (e as { cause?: { code?: string } }).cause;
+    return new Response(`upstream unreachable: ${cause?.code ?? (e as Error).name}`, { status: 504 });
   }
   const body = new Uint8Array(await res.arrayBuffer());
   const isPdf = body.length > 4 && body[0] === 0x25 && body[1] === 0x50 && body[2] === 0x44 && body[3] === 0x46; // %PDF

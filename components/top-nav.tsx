@@ -1,52 +1,49 @@
 "use client"
 
-import { BarChart3, Cloud, Home, Map, HelpCircle, Database, Users } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { usePathname } from "next/navigation"
 import Link from "next/link"
-import { ModeToggle } from "@/components/mode-toggle"
 import Image from "next/image"
+import { usePathname } from "next/navigation"
+import { ModeToggle } from "@/components/mode-toggle"
+import { cn } from "@/lib/utils"
+
+const navItems = [
+  { href: "/maps", label: "Maps" },
+  { href: "/blog", label: "Blog" },
+  { href: "/about", label: "About" },
+]
 
 export function TopNavigation() {
   const pathname = usePathname()
 
-  const isActive = (path: string) => {
-    return pathname === path
-  }
-
-  const navItems = [
-    { href: "/about", label: "About Us", icon: Home },
-    { href: "/maps", label: "Maps", icon: Map },
-    { href: "/blog", label: "Blogs", icon: Database },
-    // { href: "/test", label: "Test", icon: Database },
-    // { href: "/dashboard", label: "Dashboard", icon: BarChart3 },
-  ]
-
   return (
-    <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-16 items-center px-4 md:px-8 justify-between">
-        {/* Logo */}
-        <div className="flex items-center">
-          <Image src="/logo.png" alt="Water & Climate Lab Logo" width={160} height={44} priority />
-        </div>
-        {/* Navigation and Theme Toggle */}
-        <div className="flex items-center gap-2">
-          <nav className="flex items-center space-x-1">
+    <header className="sticky top-0 z-[2000] border-b bg-background/90 backdrop-blur">
+      <div className="flex h-14 w-full items-center justify-between gap-4 px-4 sm:px-6">
+        <Link href="/maps" className="shrink-0" aria-label="Water & Climate Lab home">
+          <Image
+            src="/logo.png"
+            alt="Water & Climate Lab, IIT Gandhinagar"
+            width={1080}
+            height={172}
+            priority
+            className="h-7 w-auto sm:h-8 dark:brightness-0 dark:invert"
+          />
+        </Link>
+        <div className="flex items-center gap-1 sm:gap-4">
+          <nav className="flex items-center">
             {navItems.map((item) => {
-              const Icon = item.icon
+              const active = pathname === item.href || pathname.startsWith(item.href + "/")
               return (
-                <Button
+                <Link
                   key={item.href}
-                  variant={isActive(item.href) ? "default" : "ghost"}
-                  size="sm"
-                  asChild
-                  className="h-9"
+                  href={item.href}
+                  className={cn(
+                    "relative px-2.5 py-4 text-sm transition-colors sm:px-3",
+                    active ? "font-medium text-foreground" : "text-muted-foreground hover:text-foreground",
+                  )}
                 >
-                  <Link href={item.href} className="flex items-center gap-2">
-                    <Icon className="h-4 w-4" />
-                    <span className="hidden sm:inline">{item.label}</span>
-                  </Link>
-                </Button>
+                  {item.label}
+                  {active && <span className="absolute inset-x-2.5 -bottom-px h-0.5 rounded-full bg-primary sm:inset-x-3" />}
+                </Link>
               )
             })}
           </nav>

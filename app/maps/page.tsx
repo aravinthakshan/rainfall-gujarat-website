@@ -1,849 +1,549 @@
 "use client"
 
-import React, { useEffect, useState } from "react"
-import { Button } from "@/components/ui/button"
-import { MapPin, Droplets, Database, AlertTriangle } from "lucide-react"
+import { useEffect, useMemo, useState } from "react"
 import dynamic from "next/dynamic"
+import { useTheme } from "@/components/theme-provider"
 import "leaflet/dist/leaflet.css"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
-import { TimeSeriesBrushChart } from "@/components/TimeSeriesBrushChart"
-import InteractiveRainfallChart from "@/components/InteractiveRainfallChart"
 import { CalendarDatePicker } from "@/components/ui/calendar-date-picker"
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
-import ReservoirMap from "@/components/ReservoirMap"
-import Papa from "papaparse"
+import SeriesChart, { type Point } from "@/components/maps/series-chart"
+import { cn } from "@/lib/utils"
+import {
+  FILLING,
+  RAIN_METRICS,
+  ramp,
+  RESERVOIR_METRICS,
+  dateToDmy,
+  dmyToDate,
+  fmt,
+  normalize,
+  prettyDate,
+  titleCase,
+  type RainMetric,
+  type ReservoirMetric,
+} from "@/lib/rain"
 
-// Format date label from database format (e.g., "01/06/2025" -> "01/06/2025")
-function formatDateLabel(dateString: string) {
-  // If already in DD/MM/YYYY format, return as is
-  if (dateString.includes('/')) {
-    return dateString;
-  }
-  
-  // Legacy format conversion (e.g., "1st June 2025" -> "01/06/2025")
-  return dateString.replace(/(\d+)(st|nd|rd|th)/, (m, d) => d.padStart(2, "0")).replace(" ", "/").replace("June", "06/2025")
-}
+const ChoroplethMap = dynamic(() => import("@/components/maps/choropleth-map"), { ssr: false, loading: () => <MapSkeleton /> })
+const ReservoirMap = dynamic(() => import("@/components/maps/reservoir-map"), { ssr: false, loading: () => <MapSkeleton /> })
 
-// Parse date string to Date object (e.g., "01/06/2025" -> Date)
-function parseDateFromString(dateString: string): Date {
-  // Parse DD/MM/YYYY format
-  if (dateString.includes('/')) {
-    const [day, month, year] = dateString.split('/').map(Number)
-    return new Date(year, month - 1, day) // month is 0-indexed
-  }
-  
-  // Legacy format parsing (e.g., "1st June 2025" -> Date)
-  const match = dateString.match(/(\d+)(st|nd|rd|th)\s+(June)\s+(\d{4})/)
-  if (match) {
-    const day = parseInt(match[1], 10)
-    const month = 5 // June is month 5 (0-indexed)
-    const year = parseInt(match[4], 10)
-    return new Date(year, month, day)
-  }
-  
-  // Fallback to current date if parsing fails
-  return new Date()
-}
+const getJSON = (url: string) => fetch(url).then((r) => (r.ok ? r.json() : Promise.reject(new Error(`${r.status} ${url}`))))
 
-// Color bins and thresholds for Rainfall Last 24 Hrs and % Against Avg
-const colorBins = [
-  { min: 0, max: 10, color: "#e3eef9" },
-  { min: 10, max: 20, color: "#c6dbef" },
-  { min: 20, max: 30, color: "#9ecae1" },
-  { min: 30, max: 40, color: "#6baed6" },
-  { min: 40, max: 50, color: "#4292c6" },
-  { min: 50, max: 60, color: "#2171b5" },
-  { min: 60, max: 70, color: "#08519c" },
-  { min: 70, max: 80, color: "#08306b" },
-  { min: 80, max: 90, color: "#05204a" },
-  { min: 90, max: 100, color: "#021024" },
-  { min: 100, max: Infinity, color: "#000c1a" },
-]
-
-const metricOptions = [
-  { value: "rain_last_24hrs", label: "Rainfall Last 24 Hrs" },
-  { value: "percent_against_avg", label: "% Against Avg" },
-]
-
-// Helper to get color for a value
-function getColor(value: number) {
-  for (const bin of colorBins) {
-    if (value >= bin.min && value < bin.max) return bin.color
-  }
-  return colorBins[colorBins.length - 1].color
-}
-
-// We'll fetch dates from the API instead of hardcoding
-const csvFilesList: string[] = [];
-type CsvRow = Record<string, string>
-
-type Feature = {
-  properties: {
-    Tehsil_new: string
-    [key: string]: any
-  }
-  [key: string]: any
-}
-
-type GeoJson = {
-  features: Feature[]
-  [key: string]: any
-}
-
-const MapContainer = dynamic(
-  () => import("react-leaflet").then(mod => mod.MapContainer),
-  { ssr: false }
-)
-const TileLayer = dynamic(
-  () => import("react-leaflet").then(mod => mod.TileLayer),
-  { ssr: false }
-)
-const GeoJSON = dynamic(
-  () => import("react-leaflet").then(mod => mod.GeoJSON),
-  { ssr: false }
-)
-
-// --- MapView component to avoid dynamic import type issues ---
-const MapView: React.FC<{
-  geojson: GeoJson
-  getTehsilValue: (tehsil: string) => number | null
-  getColor: (value: number) => string
-}> = ({ geojson, getTehsilValue, getColor }) => {
-  // Import here to avoid SSR issues
-  const { MapContainer, TileLayer, GeoJSON } = require("react-leaflet")
+// ---------------------------------------------------------------------------
+// Small UI pieces
+// ---------------------------------------------------------------------------
+function Segmented<T extends string>({
+  value,
+  options,
+  onChange,
+  size = "md",
+}: {
+  value: T
+  options: { value: T; label: string }[]
+  onChange: (v: T) => void
+  size?: "sm" | "md"
+}) {
   return (
-    <MapContainer
-      center={[22.5, 72.5]}
-      zoom={7}
-      scrollWheelZoom={true}
-      style={{ height: "100%", width: "100%", borderRadius: 8 }}
-      attributionControl={false}
-    >
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution="&copy; OpenStreetMap contributors"
-      />
-      <GeoJSON
-        data={geojson as any}
-        style={(feature: any) => {
-          const tehsil = feature?.properties?.Tehsil_new
-          const value = getTehsilValue(tehsil)
-          const color = value == null ? "#eee" : getColor(value)
-          return {
-            fillColor: color,
-            color: "#333",
-            weight: 1,
-            fillOpacity: 0.85,
-          }
-        }}
-        onEachFeature={(feature: any, layer: any) => {
-          const tehsil = feature?.properties?.Tehsil_new
-          const value = getTehsilValue(tehsil)
-          layer.bindTooltip(
-            `<strong>${tehsil}</strong><br/>${value ?? "-"}`,
-            { sticky: true }
-          )
-        }}
-      />
-    </MapContainer>
-  )
-}
-
-// --- MapView with click handler ---
-const MapViewWithClick = React.memo<{
-  geojson: GeoJson
-  getTehsilValue: (tehsil: string) => number | null
-  getColor: (value: number) => string
-  onTehsilClick: (tehsil: string) => void
-  selectedMetric: string
-  selectedDate: string
-}>(({ geojson, getTehsilValue, getColor, onTehsilClick, selectedMetric, selectedDate }) => {
-  const { MapContainer, TileLayer, GeoJSON } = require("react-leaflet")
-  const layersRef = React.useRef<any[]>([])
-  
-  // Get the appropriate label for the selected metric
-  const getMetricLabel = (metric: string) => {
-    switch (metric) {
-      case "rain_till_yesterday": return "Rain till Yesterday (mm)"
-      case "rain_last_24hrs": return "Rain Last 24hrs (mm)"
-      case "total_rainfall": return "Total Rainfall (mm)"
-      case "percent_against_avg": return "% Against Avg"
-      default: return "Value"
-    }
-  }
-  
-  // Update tooltips when date or metric changes
-  React.useEffect(() => {
-    const dateLabel = formatDateLabel(selectedDate)
-    const metricLabel = getMetricLabel(selectedMetric)
-    
-    layersRef.current.forEach(layer => {
-      const tehsil = layer.feature?.properties?.Tehsil_new
-      if (tehsil) {
-        const value = getTehsilValue(tehsil)
-        layer.setTooltipContent(
-          `<strong>${tehsil}</strong><br/>${dateLabel}<br/>${metricLabel}: ${value ?? "-"}`
-        )
-      }
-    })
-  }, [selectedDate, selectedMetric, getTehsilValue])
-
-  // Clear layers ref when geojson changes
-  React.useEffect(() => {
-    layersRef.current = []
-  }, [geojson])
-
-  return (
-    <MapContainer
-      center={[22.5, 72.5]}
-      zoom={7}
-      scrollWheelZoom={true}
-      style={{ height: "100%", width: "100%", borderRadius: 8 }}
-      attributionControl={false}
-    >
-      <TileLayer
-        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-        attribution="&copy; OpenStreetMap contributors"
-      />
-      <GeoJSON
-        data={geojson as any}
-        style={(feature: any) => {
-          const tehsil = feature?.properties?.Tehsil_new
-          const value = getTehsilValue(tehsil)
-          const color = value == null ? "#eee" : getColor(value)
-          return {
-            fillColor: color,
-            color: "#333",
-            weight: 1,
-            fillOpacity: 0.85,
-          }
-        }}
-        onEachFeature={(feature: any, layer: any) => {
-          const tehsil = feature?.properties?.Tehsil_new
-          const value = getTehsilValue(tehsil)
-          const metricLabel = getMetricLabel(selectedMetric)
-          const dateLabel = formatDateLabel(selectedDate)
-          
-          // Store layer reference for updating tooltips
-          layersRef.current.push(layer)
-          
-          layer.bindTooltip(
-            `<strong>${tehsil}</strong><br/>${dateLabel}<br/>${metricLabel}: ${value ?? "-"}`,
-            { sticky: true }
-          )
-          layer.on('click', () => {
-            if (tehsil) onTehsilClick(tehsil.toLowerCase())
-          })
-        }}
-      />
-    </MapContainer>
-  )
-})
-
-MapViewWithClick.displayName = 'MapViewWithClick'
-
-const reservoirMetricOptions = [
-  { value: "PercentageFilling", label: "% Filling" },
-  { value: "InflowinCusecs", label: "Inflow (Cusecs)" },
-  { value: "OutflowRiverinCusecs", label: "Outflow River (Cusecs)" },
-  { value: "outflowCanalinCusecs", label: "Outflow Canal (Cusecs)" },
-];
-
-const reservoirColorBins = [
-  { min: 0, max: 20, color: "#7fcdbb" },      // light blue
-  { min: 20, max: 40, color: "#41b6c4" },    // greenish blue
-  { min: 40, max: 60, color: "#ffffb2" },    // yellow
-  { min: 60, max: 80, color: "#fe9929" },    // orange
-  { min: 80, max: 90, color: "#de2d26" },    // red
-  { min: 90, max: 100, color: "#a50f15" },   // dark red
-];
-
-function getReservoirColor(value: number) {
-  for (const bin of reservoirColorBins) {
-    if (value >= bin.min && value < bin.max) return bin.color;
-  }
-  return reservoirColorBins[reservoirColorBins.length - 1].color;
-}
-
-// Helper to get warning stations for marquee
-function getReservoirWarningStations(reservoirData: any[]) {
-  const high = [];
-  const med = [];
-  const low = [];
-  for (const row of reservoirData) {
-    let val = row["PercentageFilling"];
-    val = Number(val);
-    if (isNaN(val)) continue;
-    if (val > 90) high.push(row["Name of Schemes"]);
-    else if (val > 80) med.push(row["Name of Schemes"]);
-    else if (val > 70) low.push(row["Name of Schemes"]);
-  }
-  return { high, med, low };
-}
-
-function MapsPage() {
-  const [selectedDate, setSelectedDate] = useState<string>("16th June")
-  const [selectedDateObject, setSelectedDateObject] = useState<Date | undefined>(undefined)
-  const [selectedMetric, setSelectedMetric] = useState<string>("rain_last_24hrs")
-  const [csvData, setCsvData] = useState<CsvRow[]>([])
-  const [geojson, setGeojson] = useState<GeoJson | null>(null)
-  const [allCsvData, setAllCsvData] = useState<{ [tehsil: string]: { [date: string]: number } }>({})
-  const [selectedTehsil, setSelectedTehsil] = useState<string | null>(null)
-  const [availableDates, setAvailableDates] = useState<string[]>([])
-  const [loading, setLoading] = useState(true)
-  const [reservoirGeojson, setReservoirGeojson] = useState<any>(null);
-  const [reservoirData, setReservoirData] = useState<any[]>([]);
-  const [allReservoirData, setAllReservoirData] = useState<any[]>([]);
-  const [reservoirAvailableDates, setReservoirAvailableDates] = useState<string[]>([]);
-  const [selectedReservoirDate, setSelectedReservoirDate] = useState<string>("");
-  const [selectedReservoirMetric, setSelectedReservoirMetric] = useState<string>("PercentageFilling");
-  const [reservoirLoading, setReservoirLoading] = useState(false);
-  const [selectedReservoirName, setSelectedReservoirName] = useState<string | null>(null);
-  const [reservoirTimeSeries, setReservoirTimeSeries] = useState<any[]>([]);
-  const [reservoirMetaData, setReservoirMetaData] = useState<any | null>(null);
-
-  // Load available dates from MongoDB
-  useEffect(() => {
-    fetch('/api/rainfall-dates')
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to load dates')
-        return res.json()
-      })
-      .then(dates => {
-        setAvailableDates(dates)
-        if (dates.length > 0) {
-          const latestDate = dates[dates.length - 1]
-          setSelectedDate(latestDate) // Set to latest date
-          setSelectedDateObject(parseDateFromString(latestDate))
-        }
-        setLoading(false)
-      })
-      .catch(error => {
-        console.error('Error loading dates:', error)
-        setLoading(false)
-      })
-  }, [])
-
-  // Load CSV data for selected date (for map coloring) from MongoDB
-  useEffect(() => {
-    if (!selectedDate) return
-    console.log('Loading map data for date:', selectedDate)
-    fetch(`/api/rainfall-data?date=${encodeURIComponent(selectedDate)}`)
-      .then(res => {
-        if (!res.ok) throw new Error(`Failed to load data for ${selectedDate}`)
-        return res.json()
-      })
-      .then(data => {
-        // Convert MongoDB data to CSV-like format for compatibility
-        const csvData = data.map((item: any) => ({
-          taluka: item.taluka,
-          rain_till_yesterday: item.rain_till_yesterday.toString(),
-          rain_last_24hrs: item.rain_last_24hrs.toString(),
-          total_rainfall: item.total_rainfall.toString(),
-          percent_against_avg: item.percent_against_avg.toString(),
-        }))
-        setCsvData(csvData)
-        console.log('Map data updated for date:', selectedDate)
-      })
-      .catch(error => {
-        console.error('Error loading rainfall data:', error)
-      })
-  }, [selectedDate]) // Only depend on selectedDate for map coloring
-
-  // Load all data for time series from MongoDB
-  useEffect(() => {
-    if (availableDates.length === 0) return
-    
-    console.log('Loading chart data for metric:', selectedMetric)
-    fetch('/api/rainfall-data')
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to load all rainfall data')
-        return res.json()
-      })
-      .then(data => {
-        const tehsilData: { [tehsil: string]: { [date: string]: number } } = {}
-        
-        data.forEach((item: any) => {
-          const tehsil = item.taluka?.toLowerCase()
-          if (!tehsil) return
-          if (!tehsilData[tehsil]) tehsilData[tehsil] = {}
-          tehsilData[tehsil][item.date] = Number(item[selectedMetric]) || 0
-        })
-        
-        setAllCsvData(tehsilData)
-        console.log('Chart data updated for metric:', selectedMetric)
-        
-        // Default: find tehsil with max value for the selected metric on latest date
-        if (!selectedTehsil && availableDates.length > 0) {
-          const latestDate = availableDates[availableDates.length - 1]
-          const latestData = data.filter((item: any) => item.date === latestDate)
-          let maxTehsil = null, maxVal = -Infinity
-          
-          latestData.forEach((item: any) => {
-            const val = Number(item[selectedMetric])
-            if (val > maxVal) {
-              maxVal = val
-              maxTehsil = item.taluka?.toLowerCase()
-            }
-          })
-          setSelectedTehsil(maxTehsil)
-        }
-      })
-      .catch(error => {
-        console.error('Error loading all rainfall data:', error)
-      })
-  }, [selectedMetric, availableDates]) // Depend on selectedMetric and availableDates for time series
-
-  // Load GeoJSON once (for rainfall and for reservoir boundary)
-  useEffect(() => {
-    fetch("/gujarat_tehsil.geojson")
-      .then(res => {
-        if (!res.ok) throw new Error('Failed to load GeoJSON data')
-        return res.json()
-      })
-      .then(setGeojson)
-      .catch(error => {
-        console.error('Error loading GeoJSON:', error)
-        // You might want to show a user-friendly error message here
-      })
-  }, [])
-
-  // Fetch reservoir geojson once
-  useEffect(() => {
-    fetch("/Reservoir_ID_Location.geojson")
-      .then(res => res.json())
-      .then(setReservoirGeojson)
-      .catch(console.error);
-  }, []);
-
-  // Fetch available reservoir dates once
-  useEffect(() => {
-    fetch("/api/reservoir-data")
-      .then(res => res.json())
-      .then((data: any[]) => {
-        const dates = Array.from(new Set(data.map((row: any) => row.date))) as string[];
-        setReservoirAvailableDates(dates);
-        if (dates.length > 0 && !selectedReservoirDate) setSelectedReservoirDate(dates[dates.length - 1]);
-      })
-      .catch(console.error);
-  }, []);
-
-  // Fetch reservoir data for selected date
-  useEffect(() => {
-    if (!selectedReservoirDate) return;
-    setReservoirLoading(true);
-    fetch(`/api/reservoir-data?date=${encodeURIComponent(selectedReservoirDate)}`)
-      .then(res => res.json())
-      .then(data => setReservoirData(data))
-      .catch(console.error)
-      .finally(() => setReservoirLoading(false));
-  }, [selectedReservoirDate]);
-
-  // Build time series for selected reservoir
-  useEffect(() => {
-    if (!selectedReservoirName) {
-      setReservoirTimeSeries([]);
-      return;
-    }
-    // Use already-fetched allReservoirData for the selected name
-    const filtered = allReservoirData.filter(row => row["Name of Schemes"]?.toLowerCase() === selectedReservoirName.toLowerCase());
-    const series = filtered.map(row => ({
-      date: row.date,
-      timestamp: parseDateFromString(row.date).getTime(),
-      value: Number(row[selectedReservoirMetric]) || 0,
-      formattedDate: row.date,
-    }))
-    .sort((a, b) => a.timestamp - b.timestamp);
-    setReservoirTimeSeries(series);
-  }, [selectedReservoirName, selectedReservoirMetric, allReservoirData]);
-
-  // Set default selected reservoir on data/metric change (like rainfall)
-  useEffect(() => {
-    if (reservoirData.length > 0) {
-      let maxReservoir = null, maxVal = -Infinity;
-      reservoirData.forEach((row: any) => {
-        const val = Number(row["PercentageFilling"]);
-        if (val > maxVal) {
-          maxVal = val;
-          maxReservoir = row["Name of Schemes"];
-        }
-      });
-      setSelectedReservoirName(maxReservoir);
-    }
-  }, [reservoirData]);
-
-  // Load metadata CSV and update when selectedReservoirName changes
-  useEffect(() => {
-    if (!selectedReservoirName) {
-      setReservoirMetaData(null);
-      return;
-    }
-    fetch("/Metadata.csv")
-      .then(res => res.text())
-      .then(csvText => {
-        const parsed = Papa.parse(csvText, { header: true });
-        if (!parsed.data || !Array.isArray(parsed.data)) return;
-        const match = parsed.data.find((row: any) =>
-          row["Name of Schemes"]?.toLowerCase().trim() === selectedReservoirName.toLowerCase().trim()
-        );
-        setReservoirMetaData(match || null);
-      });
-  }, [selectedReservoirName]);
-
-  // Fetch all reservoir data once for marquee
-  useEffect(() => {
-    fetch('/api/reservoir-data')
-      .then(res => res.json())
-      .then(setAllReservoirData)
-      .catch(console.error);
-  }, []);
-
-  // Helper: get value for a tehsil
-  function getTehsilValue(tehsil: string) {
-    const row: CsvRow | undefined = csvData.find((r: CsvRow) => r.taluka?.toLowerCase() === tehsil?.toLowerCase())
-    if (!row) return null
-    
-    // Get the value for the selected metric
-    const val = row[selectedMetric]
-    if (val === undefined || val === null || val === '') return null
-    
-    const numVal = Number(val)
-    return isNaN(numVal) ? null : numVal
-  }
-
-  // Handle date selection from calendar
-  const handleDateChange = (date: Date | undefined) => {
-    if (date) {
-      console.log('Date changed to:', date)
-      setSelectedDateObject(date)
-      // Convert Date back to string format for API calls (DD/MM/YYYY)
-      const day = date.getDate().toString().padStart(2, '0')
-      const month = (date.getMonth() + 1).toString().padStart(2, '0')
-      const year = date.getFullYear()
-      const dateString = `${day}/${month}/${year}`
-      console.log('Setting selectedDate to:', dateString)
-      setSelectedDate(dateString)
-    }
-  }
-
-  // Debug effect to log when map should update
-  useEffect(() => {
-    console.log('Map should update - Date:', selectedDate, 'Metric:', selectedMetric, 'Data points:', csvData.length)
-  }, [selectedDate, selectedMetric, csvData.length])
-
-  // Debug effect to log when chart should update
-  useEffect(() => {
-    console.log('Chart should update - Metric:', selectedMetric, 'Tehsil:', selectedTehsil, 'Available dates:', availableDates.length)
-  }, [selectedMetric, selectedTehsil, availableDates.length])
-
-  // --- Rainfall time series: ensure sorting and correct date type ---
-  const timeSeries = selectedTehsil && allCsvData[selectedTehsil]
-    ? [...availableDates]
-        .sort((a, b) => parseDateFromString(a).getTime() - parseDateFromString(b).getTime())
-        .map(date => ({
-          date: date, // Use the date string directly
-          timestamp: parseDateFromString(date).getTime(),
-          value: allCsvData[selectedTehsil]?.[date] ?? 0,
-          formattedDate: formatDateLabel(date),
-        }))
-    : []
-
-  // Find the most recent reservoir data for the marquee
-  const latestReservoirData = React.useMemo(() => {
-    if (!reservoirAvailableDates.length) return [];
-    const latestDate = reservoirAvailableDates[reservoirAvailableDates.length - 1];
-    // Find all data for the latest date from the full allReservoirData set
-    return allReservoirData.filter(row => row.date === latestDate);
-  }, [reservoirAvailableDates, allReservoirData]);
-
-  // Reservoir warning marquee node (always for most recent day)
-  const reservoirWarningMarquee = (latestReservoirData.length > 0 ? (() => {
-    const warnings = getReservoirWarningStations(latestReservoirData);
-    if (!warnings.high.length && !warnings.med.length && !warnings.low.length) return null;
-    // Prepare all warning boxes in order
-    const warningBoxes = [
-      ...warnings.high.map((station, idx) => (
-        <span key={`high-${station}-${idx}`} className="bg-red-700 text-white dark:bg-red-800 dark:text-white font-semibold rounded-lg px-3 py-1 mr-4 inline-block shadow">
-          High Alert: {station}
-        </span>
-      )),
-      ...warnings.med.map((station, idx) => (
-        <span key={`med-${station}-${idx}`} className="bg-orange-600 text-white dark:bg-orange-700 dark:text-white font-semibold rounded-lg px-3 py-1 mr-4 inline-block shadow">
-          Alert: {station}
-        </span>
-      )),
-      ...warnings.low.map((station, idx) => (
-        <span key={`low-${station}-${idx}`} className="bg-yellow-500 text-black dark:bg-yellow-600 dark:text-black font-semibold rounded-lg px-3 py-1 mr-4 inline-block shadow">
-          Warning: {station}
-        </span>
-      )),
-    ];
-    return (
-      <div className="overflow-hidden whitespace-nowrap w-full bg-white dark:bg-black bg-opacity-90 dark:bg-opacity-90 rounded py-2 px-4 mb-2">
-        <div
-          style={{
-            display: 'inline-block',
-            whiteSpace: 'nowrap',
-            animation: 'marquee 30s linear infinite',
-            minWidth: '100%',
-          }}
+    <div className="inline-flex rounded-lg border bg-muted/60 p-0.5">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          onClick={() => onChange(o.value)}
+          className={cn(
+            "rounded-md font-medium transition-colors",
+            size === "sm" ? "px-2.5 py-1 text-xs" : "px-3.5 py-1.5 text-sm",
+            value === o.value ? "bg-background text-foreground shadow-sm" : "text-muted-foreground hover:text-foreground",
+          )}
         >
-          {warningBoxes}
-          {/* Duplicate for seamless loop */}
-          {warningBoxes}
-        </div>
-        <style>{`
-          @keyframes marquee {
-            0% { transform: translateX(0); }
-            100% { transform: translateX(-50%); }
-          }
-        `}</style>
-      </div>
-    );
-  })() : null);
+          {o.label}
+        </button>
+      ))}
+    </div>
+  )
+}
 
+function Card({ className, children }: { className?: string; children: React.ReactNode }) {
+  return <div className={cn("rounded-xl border bg-card", className)}>{children}</div>
+}
+
+function Stat({ label, value, unit, note }: { label: string; value: string; unit?: string; note?: string }) {
   return (
-    <div className="flex flex-col min-h-screen">
-      <div className="flex-1 p-4 md:p-8 pt-6">
-        <div className="mb-6">
-          <h2 className="text-3xl font-bold tracking-tight">Water & Climate Dashboard</h2>
-          <p className="text-muted-foreground">
-            Interactive dashboard for water and climate data across Gujarat
-            {loading && <span className="ml-2 text-blue-600">Loading data...</span>}
-          </p>
-        </div>
+    <Card className="px-4 py-3.5">
+      <div className="text-xs text-muted-foreground">{label}</div>
+      <div className="mt-1 flex items-baseline gap-1">
+        <span className="text-2xl font-semibold tabular-nums tracking-tight">{value}</span>
+        {unit && <span className="text-sm text-muted-foreground">{unit}</span>}
+      </div>
+      {note && <div className="mt-0.5 truncate text-xs text-muted-foreground">{note}</div>}
+    </Card>
+  )
+}
 
-        <Tabs defaultValue="rainfall" className="w-full">
-          <TabsList className="grid w-full grid-cols-2 max-w-md mb-6">
-            <TabsTrigger value="rainfall" className="flex items-center gap-2">
-              <Droplets className="w-4 h-4" />
-              Rainfall
-            </TabsTrigger>
-            <TabsTrigger value="reservoir" className="flex items-center gap-2">
-              <Database className="w-4 h-4" />
-              Reservoir
-            </TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="rainfall" className="space-y-4">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-semibold tracking-tight">Rainfall Map</h3>
-                <p className="text-muted-foreground">
-                  Interactive map showing rainfall data across Gujarat
-                </p>
-              </div>
-              <button
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow ml-4"
-                onClick={() => window.open('/path/to/information.pdf', '_blank')}
-              >
-                Information
-              </button>
-            </div>
-
-            {/* Map and Time Series Side by Side */}
-            <div className="flex flex-col lg:flex-row w-full gap-4 items-stretch">
-              <div className="lg:w-1/2 h-[500px] lg:h-[calc(100vh-260px)] flex flex-col">
-                <div className="flex-1 h-full relative border rounded bg-card">
-                  {geojson ? (
-                    <MapViewWithClick 
-                      key={`${selectedDate}-${selectedMetric}`}
-                      geojson={geojson} 
-                      getTehsilValue={getTehsilValue} 
-                      getColor={getColor} 
-                      onTehsilClick={setSelectedTehsil} 
-                      selectedMetric={selectedMetric} 
-                      selectedDate={selectedDate} 
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">Loading map...</div>
-                  )}
-                  {/* Legend */}
-                  <div className="absolute bottom-4 right-4 bg-background/90 backdrop-blur-sm border rounded-lg p-4 z-[1000]">
-                    <h4 className="font-medium mb-2">
-                      {selectedMetric === "percent_against_avg" ? "% Against Avg" : 
-                       selectedMetric === "rain_till_yesterday" ? "Rain till Yesterday (mm)" :
-                       selectedMetric === "rain_last_24hrs" ? "Rain Last 24hrs (mm)" :
-                       "Total Rainfall (mm)"}
-                    </h4>
-                    <div className="space-y-1 text-xs">
-                      {colorBins.map((bin, i) => (
-                        <div key={i} className="flex items-center gap-2">
-                          <div className="w-4 h-4 rounded" style={{ background: bin.color }}></div>
-                          <span>{bin.max === Infinity ? `>${bin.min}` : `${bin.min} - ${bin.max}`}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="lg:w-1/2 flex flex-col h-[500px] lg:h-[calc(100vh-260px)]">
-                {selectedTehsil && allCsvData[selectedTehsil] ? (
-                  <InteractiveRainfallChart
-                    data={timeSeries}
-                    title={`${selectedTehsil.charAt(0).toUpperCase() + selectedTehsil.slice(1)} - ${metricOptions.find(m => m.value === selectedMetric)?.label}`}
-                    yAxisLabel={metricOptions.find(m => m.value === selectedMetric)?.label || "Value"}
-                    color="#60a5fa"
-                    selectedDate={selectedDate}
-                    onDateSelect={(date) => {
-                      setSelectedDate(date)
-                      setSelectedDateObject(parseDateFromString(date))
-                    }}
-                  >
-                    <CalendarDatePicker
-                      selectedDate={selectedDateObject}
-                      onDateChange={handleDateChange}
-                      availableDates={availableDates}
-                      disabled={loading}
-                    />
-                    <select
-                      className="flex h-10 w-[240px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                      value={selectedMetric}
-                      onChange={e => {
-                        console.log('Metric changed to:', e.target.value)
-                        setSelectedMetric(e.target.value)
-                      }}
-                    >
-                      {metricOptions.map(opt => (
-                        <option key={opt.value} value={opt.value}>{opt.label}</option>
-                      ))}
-                    </select>
-                  </InteractiveRainfallChart>
-                ) : (
-                  <div className="text-muted-foreground flex items-center justify-center h-[500px]">Select a tehsil to view rainfall data</div>
-                )}
-              </div>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="reservoir" className="space-y-4">
-            <div className="mb-4 flex items-center justify-between">
-              <div>
-                <h3 className="text-xl font-semibold tracking-tight">Reservoir Information</h3>
-                <p className="text-muted-foreground">
-                  Reservoir storage and water level data across Gujarat
-                </p>
-              </div>
-              <button
-                className="bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded shadow ml-4"
-                onClick={() => window.open('/path/to/information.pdf', '_blank')}
-              >
-                Information
-              </button>
-            </div>
-            {reservoirWarningMarquee}
-            <div className="flex flex-col lg:flex-row w-full gap-4 items-stretch">
-              <div className="lg:w-1/2 h-[500px] lg:h-[calc(100vh-260px)] flex flex-col">
-                <div className="flex-1 h-full relative border rounded bg-card">
-                  {reservoirGeojson && reservoirData.length > 0 && geojson ? (
-                    <ReservoirMap
-                      geojson={reservoirGeojson}
-                      boundaryGeojson={geojson}
-                      reservoirData={reservoirData}
-                      getColor={getReservoirColor}
-                      selectedMetric={"PercentageFilling"}
-                      selectedDate={selectedReservoirDate}
-                      onReservoirClick={setSelectedReservoirName}
-                    />
-                  ) : (
-                    <div className="absolute inset-0 flex items-center justify-center">Loading reservoir map...</div>
-                  )}
-                  {/* Legend */}
-                  <div className="absolute bottom-4 right-4 bg-background/90 backdrop-blur-sm border rounded-lg p-4 z-[1000]">
-                    <h4 className="font-medium mb-2">% Filling</h4>
-                    <div className="space-y-1 text-xs">
-                      {reservoirColorBins.map((bin, i) => (
-                        <div key={i} className="flex items-center gap-2">
-                          <div className="w-4 h-4 rounded" style={{ background: bin.color }}></div>
-                          <span>{bin.max === Infinity ? `>${bin.min}` : `${bin.min} - ${bin.max}`}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                </div>
-              </div>
-              <div className="lg:w-1/2 flex flex-col gap-6 h-[500px] lg:h-[calc(100vh-260px)]">
-                {selectedReservoirName && reservoirTimeSeries.length > 0 ? (
-                  <>
-                    <div className="flex flex-col h-full">
-                      {/* Meta Data Card at the top, does not shrink */}
-                      {selectedReservoirName && reservoirMetaData && (
-                        <div className="mb-4 w-full flex-shrink-0">
-                          <h4 className="text-lg font-bold mb-2">{selectedReservoirName} Information</h4>
-                          <div className="bg-card rounded-lg shadow p-4 border w-full">
-                            <div className="grid grid-cols-3 gap-x-4 gap-y-2 w-full">
-                              <div className="flex"><span className="font-semibold pr-2">District:</span> <span>{reservoirMetaData["District"]}</span></div>
-                              <div className="flex"><span className="font-semibold pr-2">Taluka:</span> <span>{reservoirMetaData["Taluka"]}</span></div>
-                              <div className="flex"><span className="font-semibold pr-2">Name of Schemes:</span> <span>{reservoirMetaData["Name of Schemes"]}</span></div>
-                              <div className="flex"><span className="font-semibold pr-2">Type:</span> <span>{
-                                (() => {
-                                  const typeVal = reservoirMetaData["Type (Gated/Ungated/FuseGate)"]?.trim();
-                                  if (!typeVal) return "-";
-                                  if (typeVal === "G") return "Gated";
-                                  if (typeVal === "UG") return "Ungated";
-                                  if (typeVal === "FG") return "FuseGate";
-                                  return typeVal; // fallback to original if not matched
-                                })()
-                              }</span></div>
-                              <div className="flex"><span className="font-semibold pr-2">Overflow Spillway Level (m):</span> <span>{reservoirMetaData["Overflow Spillway Level (m)"]}</span></div>
-                              <div className="flex"><span className="font-semibold pr-2">Full Reservoir Level (m):</span> <span>{reservoirMetaData["Full Reservoi Level (m)"]}</span></div>
-                              <div className="flex"><span className="font-semibold pr-2">Gross Storage (MCM):</span> <span>{reservoirMetaData["Gross Storage (MCM)"]}</span></div>
-                              <div className="flex"><span className="font-semibold pr-2">Live Storage (MCM):</span> <span>{reservoirMetaData["Live Storage (MCM)"]}</span></div>
-                              <div className="flex"><span className="font-semibold pr-2">Dead Storage (MCM):</span> <span>{reservoirMetaData["Dead Storage (MCM)"]}</span></div>
-                            </div>
-                          </div>
-                        </div>
-                      )}
-                      <div className="flex-1 flex flex-col">
-                        <InteractiveRainfallChart
-                          key={`${selectedReservoirName}-${selectedReservoirMetric}`}
-                          data={reservoirTimeSeries}
-                          title={`${selectedReservoirName.charAt(0).toUpperCase() + selectedReservoirName.slice(1)} - ${reservoirMetricOptions.find(m => m.value === selectedReservoirMetric)?.label}`}
-                          yAxisLabel={reservoirMetricOptions.find(m => m.value === selectedReservoirMetric)?.label || "Value"}
-                          color="#60a5fa"
-                        >
-                          <CalendarDatePicker
-                            selectedDate={selectedReservoirDate ? parseDateFromString(selectedReservoirDate) : undefined}
-                            onDateChange={date => {
-                              if (date) {
-                                const day = date.getDate().toString().padStart(2, '0');
-                                const month = (date.getMonth() + 1).toString().padStart(2, '0');
-                                const year = date.getFullYear();
-                                const dateString = `${day}/${month}/${year}`;
-                                setSelectedReservoirDate(dateString);
-                              }
-                            }}
-                            availableDates={reservoirAvailableDates}
-                            disabled={reservoirLoading}
-                          />
-                          <select
-                            className="flex h-10 w-[240px] items-center justify-between rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-                            value={selectedReservoirMetric}
-                            onChange={e => setSelectedReservoirMetric(e.target.value)}
-                          >
-                            {reservoirMetricOptions.map(opt => (
-                              <option key={opt.value} value={opt.value}>{opt.label}</option>
-                            ))}
-                          </select>
-                        </InteractiveRainfallChart>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  <div className="h-[500px] lg:h-[calc(100vh-260px)] border rounded bg-card flex items-center justify-center">
-                    <div className="text-center">
-                      <h4 className="text-lg font-medium mb-2">Reservoir Data</h4>
-                      <p className="text-muted-foreground">Click a reservoir marker to view time series</p>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </TabsContent>
-        </Tabs>
+function Legend({ title, labels, points = false }: { title: string; labels: string[]; points?: boolean }) {
+  const { resolvedTheme } = useTheme()
+  const colors = ramp(resolvedTheme === "dark", points)
+  return (
+    <div className="flex flex-wrap items-center gap-x-3 gap-y-2 border-t px-4 py-3">
+      <span className="text-xs text-muted-foreground">{title}</span>
+      <div className="flex">
+        {labels.map((l, i) => (
+          <div key={l} className="flex w-[60px] flex-col gap-1 sm:w-[72px]">
+            <div className={cn("h-2", i === 0 && "rounded-l", i === labels.length - 1 && "rounded-r")} style={{ background: colors[i] }} />
+            <span className="text-[10px] leading-tight text-muted-foreground">{l}</span>
+          </div>
+        ))}
       </div>
     </div>
   )
 }
 
-export default MapsPage
+function MapSkeleton() {
+  return <div className="h-full w-full animate-pulse bg-muted" />
+}
+
+function Detail({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div>
+      <dt className="text-xs text-muted-foreground">{label}</dt>
+      <dd className="mt-0.5 text-sm font-medium tabular-nums">{value}</dd>
+    </div>
+  )
+}
+
+function EmptyState({ error }: { error?: boolean }) {
+  return (
+    <Card className="px-6 py-16 text-center">
+      <p className="font-medium">{error ? "Data is temporarily unavailable" : "No data yet"}</p>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {error ? "The database could not be reached. Please try again shortly." : "Reports appear here once the daily ingest has run."}
+      </p>
+    </Card>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Rainfall
+// ---------------------------------------------------------------------------
+function RainfallView({ geojson }: { geojson: any }) {
+  const [dates, setDates] = useState<string[] | null>(null)
+  const [date, setDate] = useState<string>("")
+  const [rows, setRows] = useState<any[]>([])
+  const [metric, setMetric] = useState<RainMetric>("rain_last_24hrs")
+  const [selected, setSelected] = useState<string | null>(null)
+  const [series, setSeries] = useState<any[]>([])
+  const [error, setError] = useState(false)
+
+  useEffect(() => {
+    getJSON("/api/rainfall-dates")
+      .then((d: string[]) => {
+        setDates(d)
+        if (d.length) setDate(d[d.length - 1])
+      })
+      .catch(() => {
+        setDates([])
+        setError(true)
+      })
+  }, [])
+
+  useEffect(() => {
+    if (!date) return
+    getJSON(`/api/rainfall-data?date=${encodeURIComponent(date)}`).then(setRows).catch(console.error)
+  }, [date])
+
+  const byKey = useMemo(() => new Map(rows.map((r) => [String(r.taluka).toLowerCase(), r])), [rows])
+  const values = useMemo(() => new Map(rows.map((r) => [String(r.taluka).toLowerCase(), Number(r[metric])])), [rows, metric])
+
+  const wettest = useMemo(
+    () => [...rows].sort((a, b) => b[metric] - a[metric]).slice(0, 8),
+    [rows, metric],
+  )
+
+  // default selection: wettest taluka in the last 24 h
+  useEffect(() => {
+    if (!selected && rows.length) {
+      const top = rows.reduce((a, b) => (b.rain_last_24hrs > a.rain_last_24hrs ? b : a))
+      setSelected(String(top.taluka).toLowerCase())
+    }
+  }, [rows, selected])
+
+  const current = selected ? byKey.get(selected) : null
+  useEffect(() => {
+    if (!current?.taluka) return
+    getJSON(`/api/rainfall-data?taluka=${encodeURIComponent(current.taluka)}`).then(setSeries).catch(console.error)
+  }, [current?.taluka])
+
+  const points: Point[] = useMemo(
+    () =>
+      series
+        .map((r) => ({ date: r.date, value: Number(r[metric]) || 0 }))
+        .sort((a, b) => dmyToDate(a.date).getTime() - dmyToDate(b.date).getTime()),
+    [series, metric],
+  )
+
+  if (dates === null) return <MapSkeletonBlock />
+  if (!dates.length) return <EmptyState error={error} />
+
+  const m = RAIN_METRICS[metric]
+  const mean = (k: string) => rows.reduce((s, r) => s + (Number(r[k]) || 0), 0) / (rows.length || 1)
+  const top24 = rows.length ? rows.reduce((a, b) => (b.rain_last_24hrs > a.rain_last_24hrs ? b : a)) : null
+  const aboveAvg = rows.filter((r) => r.percent_against_avg >= 100).length
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <CalendarDatePicker
+          selectedDate={date ? dmyToDate(date) : undefined}
+          onDateChange={(d) => d && setDate(dateToDmy(d))}
+          availableDates={dates}
+          className="w-auto"
+        />
+        <Segmented
+          value={metric}
+          onChange={setMetric}
+          options={(Object.keys(RAIN_METRICS) as RainMetric[]).map((k) => ({ value: k, label: RAIN_METRICS[k].short }))}
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Stat label="State average, last 24 h" value={fmt(mean("rain_last_24hrs"), 1)} unit="mm" note={`${rows.length} talukas reporting`} />
+        <Stat label="Wettest taluka, last 24 h" value={fmt(top24?.rain_last_24hrs, 0)} unit="mm" note={top24 ? `${top24.taluka}, ${top24.district}` : ""} />
+        <Stat label="Average season total" value={fmt(mean("total_rainfall"))} unit="mm" note={`${fmt(mean("percent_against_avg"))}% of annual average`} />
+        <Stat label="At or above annual average" value={fmt(aboveAvg)} unit={`/ ${rows.length}`} note="talukas" />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+        <Card className="isolate overflow-hidden">
+          <div className="h-[460px] sm:h-[560px]">
+            {geojson && (
+              <ChoroplethMap
+                geojson={geojson}
+                values={values}
+                thresholds={m.thresholds}
+                unit={m.unit}
+                selected={selected}
+                onSelect={setSelected}
+              />
+            )}
+          </div>
+          <Legend title={`${m.label} (${m.unit})`} labels={m.classLabels} />
+        </Card>
+
+        <div className="space-y-4">
+          <Card className="p-4">
+            {current ? (
+              <>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold leading-tight">{current.taluka}</h2>
+                    <p className="text-sm text-muted-foreground">
+                      {current.district} · {current.region}
+                    </p>
+                  </div>
+                  <span className="shrink-0 text-xs text-muted-foreground">{prettyDate(date)}</span>
+                </div>
+                <dl className="mt-4 grid grid-cols-3 gap-3">
+                  <Detail label="Last 24 h" value={`${fmt(current.rain_last_24hrs, 1)} mm`} />
+                  <Detail label="Season total" value={`${fmt(current.total_rainfall)} mm`} />
+                  <Detail label="% of average" value={`${fmt(current.percent_against_avg, 1)}%`} />
+                </dl>
+                <div className="mt-5 flex items-center justify-between">
+                  <span className="text-xs font-medium text-muted-foreground">{m.label}</span>
+                  <span className="text-xs text-muted-foreground">Click a day to view it on the map</span>
+                </div>
+                <div className="mt-2">
+                  <SeriesChart
+                    data={points}
+                    kind={metric === "rain_last_24hrs" ? "bar" : "area"}
+                    unit={m.unit}
+                    selectedDate={date}
+                    onSelectDate={setDate}
+                  />
+                </div>
+              </>
+            ) : (
+              <p className="py-12 text-center text-sm text-muted-foreground">Select a taluka on the map</p>
+            )}
+          </Card>
+
+          <Card className="p-4">
+            <h3 className="text-sm font-medium">Highest {m.short.toLowerCase()}</h3>
+            <ol className="mt-2 divide-y">
+              {wettest.map((r, i) => {
+                const key = String(r.taluka).toLowerCase()
+                return (
+                  <li key={key}>
+                    <button
+                      onClick={() => setSelected(key)}
+                      className={cn(
+                        "flex w-full items-center gap-3 py-2 text-left text-sm hover:text-primary",
+                        key === selected && "text-primary",
+                      )}
+                    >
+                      <span className="w-4 text-xs tabular-nums text-muted-foreground">{i + 1}</span>
+                      <span className="flex-1 truncate">
+                        {r.taluka} <span className="text-muted-foreground">· {r.district}</span>
+                      </span>
+                      <span className="tabular-nums">
+                        {fmt(r[metric], metric === "percent_against_avg" ? 1 : 0)} {m.unit}
+                      </span>
+                    </button>
+                  </li>
+                )
+              })}
+            </ol>
+          </Card>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+// Reservoirs
+// ---------------------------------------------------------------------------
+const SEVERITY: Record<string, number> = { "HIGH ALERT": 3, ALERT: 2, WARNING: 1 }
+const SEVERITY_STYLE: Record<string, string> = {
+  "HIGH ALERT": "bg-red-500/10 text-red-700 dark:text-red-400",
+  ALERT: "bg-orange-500/10 text-orange-700 dark:text-orange-400",
+  WARNING: "bg-amber-500/10 text-amber-700 dark:text-amber-400",
+}
+const TYPES: Record<string, string> = { G: "Gated", UG: "Ungated", FG: "Fuse gate" }
+
+function warningOf(r: any) {
+  return String(r?.Warning ?? "").toUpperCase().replace(/\s+/g, " ").trim()
+}
+
+function WarningBadge({ w }: { w: string }) {
+  if (!SEVERITY[w]) return null
+  return <span className={cn("rounded px-1.5 py-0.5 text-[11px] font-medium", SEVERITY_STYLE[w])}>{titleCase(w.toLowerCase())}</span>
+}
+
+function ReservoirView({ points, boundary }: { points: any; boundary: any }) {
+  const [dates, setDates] = useState<string[] | null>(null)
+  const [date, setDate] = useState("")
+  const [rows, setRows] = useState<any[]>([])
+  const [metric, setMetric] = useState<ReservoirMetric>("PercentageFilling")
+  const [selected, setSelected] = useState<string | null>(null)
+  const [series, setSeries] = useState<any[]>([])
+  const [error, setError] = useState(false)
+
+  useEffect(() => {
+    getJSON("/api/reservoir-dates")
+      .then((d: string[]) => {
+        setDates(d)
+        if (d.length) setDate(d[d.length - 1])
+      })
+      .catch(() => {
+        setDates([])
+        setError(true)
+      })
+  }, [])
+
+  useEffect(() => {
+    if (!date) return
+    getJSON(`/api/reservoir-data?date=${encodeURIComponent(date)}`).then(setRows).catch(console.error)
+  }, [date])
+
+  const byName = useMemo(() => new Map(rows.map((r) => [normalize(String(r["Name of Schemes"])), r])), [rows])
+  const alerts = useMemo(
+    () => rows.filter((r) => SEVERITY[warningOf(r)]).sort((a, b) => SEVERITY[warningOf(b)] - SEVERITY[warningOf(a)] || b.PercentageFilling - a.PercentageFilling),
+    [rows],
+  )
+
+  useEffect(() => {
+    if (!selected && rows.length) {
+      const first = alerts[0] ?? rows.reduce((a, b) => (b.PercentageFilling > a.PercentageFilling ? b : a))
+      setSelected(first["Name of Schemes"])
+    }
+  }, [rows, alerts, selected])
+
+  const current = selected ? byName.get(normalize(selected)) : null
+  useEffect(() => {
+    if (!current) return
+    getJSON(`/api/reservoir-data?reservoir=${encodeURIComponent(current["Name of Schemes"])}`).then(setSeries).catch(console.error)
+  }, [current])
+
+  const chartPoints: Point[] = useMemo(
+    () =>
+      series
+        .map((r) => ({ date: r.date, value: Number(r[metric]) || 0 }))
+        .sort((a, b) => dmyToDate(a.date).getTime() - dmyToDate(b.date).getTime()),
+    [series, metric],
+  )
+
+  if (dates === null) return <MapSkeletonBlock />
+  if (!dates.length) return <EmptyState error={error} />
+
+  const design = rows.reduce((s, r) => s + (Number(r.DesignGross) || 0), 0)
+  const present = rows.reduce((s, r) => s + (Number(r.PresentGross) || 0), 0)
+  const statePct = design ? (present / design) * 100 : rows.reduce((s, r) => s + (Number(r.PercentageFilling) || 0), 0) / (rows.length || 1)
+  const over90 = rows.filter((r) => r.PercentageFilling >= 90).length
+  const inflow = rows.reduce((s, r) => s + (Number(r.InflowinCusecs) || 0), 0)
+  const rm = RESERVOIR_METRICS[metric]
+
+  return (
+    <div className="space-y-4">
+      <div className="flex flex-wrap items-center gap-2">
+        <CalendarDatePicker
+          selectedDate={date ? dmyToDate(date) : undefined}
+          onDateChange={(d) => d && setDate(dateToDmy(d))}
+          availableDates={dates}
+          className="w-auto"
+        />
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        <Stat
+          label="Statewide storage"
+          value={fmt(statePct, 1)}
+          unit="%"
+          note={design ? `${fmt(present)} of ${fmt(design)} MCM` : `${rows.length} dams`}
+        />
+        <Stat label="Dams 90% full or more" value={fmt(over90)} unit={`/ ${rows.length}`} />
+        <Stat label="Dams on alert" value={fmt(alerts.length)} note={`${alerts.filter((a) => warningOf(a) === "HIGH ALERT").length} on high alert`} />
+        <Stat label="Total inflow" value={fmt(inflow)} unit="cusecs" />
+      </div>
+
+      <div className="grid gap-4 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
+        <Card className="isolate overflow-hidden">
+          <div className="h-[460px] sm:h-[560px]">
+            {points && <ReservoirMap points={points} boundary={boundary} rows={byName} selected={selected} onSelect={setSelected} />}
+          </div>
+          <Legend title="Storage (% of design)" labels={FILLING.classLabels} points />
+        </Card>
+
+        <div className="space-y-4">
+          <Card className="p-4">
+            {current ? (
+              <>
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <h2 className="text-lg font-semibold leading-tight">{current["Name of Schemes"]}</h2>
+                    <p className="text-sm text-muted-foreground">
+                      {[current.Taluka, current.District].filter(Boolean).join(", ")}
+                      {current.Type ? ` · ${TYPES[current.Type] ?? current.Type}` : ""}
+                    </p>
+                  </div>
+                  <WarningBadge w={warningOf(current)} />
+                </div>
+                <dl className="mt-4 grid grid-cols-3 gap-3">
+                  <Detail label="Storage" value={`${fmt(current.PercentageFilling, 1)}%`} />
+                  <Detail label="Inflow" value={`${fmt(current.InflowinCusecs)} cusecs`} />
+                  <Detail label="River outflow" value={`${fmt(current.OutflowRiverinCusecs)} cusecs`} />
+                  {current.DesignGross != null && (
+                    <>
+                      <Detail label="Present / design" value={`${fmt(current.PresentGross, 1)} / ${fmt(current.DesignGross, 1)} MCM`} />
+                      <Detail label="Water level" value={`${fmt(current.PWL, 2)} m`} />
+                      <Detail label="Full level" value={`${fmt(current.FRL, 2)} m`} />
+                    </>
+                  )}
+                </dl>
+                <div className="mt-5 flex items-center justify-between gap-2">
+                  <Segmented
+                    size="sm"
+                    value={metric}
+                    onChange={setMetric}
+                    options={(Object.keys(RESERVOIR_METRICS) as ReservoirMetric[]).map((k) => ({ value: k, label: RESERVOIR_METRICS[k].short }))}
+                  />
+                </div>
+                <div className="mt-3">
+                  <SeriesChart data={chartPoints} kind="area" unit={rm.unit} selectedDate={date} onSelectDate={setDate} />
+                </div>
+              </>
+            ) : (
+              <p className="py-12 text-center text-sm text-muted-foreground">Select a dam on the map</p>
+            )}
+          </Card>
+
+          <Card className="p-4">
+            <h3 className="text-sm font-medium">Alerts {alerts.length > 0 && <span className="text-muted-foreground">· {alerts.length}</span>}</h3>
+            {alerts.length ? (
+              <ul className="mt-2 max-h-[280px] divide-y overflow-y-auto">
+                {alerts.map((r) => (
+                  <li key={r["Name of Schemes"]}>
+                    <button
+                      onClick={() => setSelected(r["Name of Schemes"])}
+                      className="flex w-full items-center gap-3 py-2 text-left text-sm hover:text-primary"
+                    >
+                      <span className="flex-1 truncate">
+                        {r["Name of Schemes"]} {r.District && <span className="text-muted-foreground">· {r.District}</span>}
+                      </span>
+                      <span className="tabular-nums text-muted-foreground">{fmt(r.PercentageFilling, 0)}%</span>
+                      <WarningBadge w={warningOf(r)} />
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            ) : (
+              <p className="mt-2 text-sm text-muted-foreground">No dams on alert.</p>
+            )}
+          </Card>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function MapSkeletonBlock() {
+  return (
+    <div className="space-y-4">
+      <div className="h-9 w-72 animate-pulse rounded-lg bg-muted" />
+      <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
+        {[0, 1, 2, 3].map((i) => (
+          <div key={i} className="h-[88px] animate-pulse rounded-xl bg-muted" />
+        ))}
+      </div>
+      <div className="h-[560px] animate-pulse rounded-xl bg-muted" />
+    </div>
+  )
+}
+
+// ---------------------------------------------------------------------------
+export default function MapsPage() {
+  const [tab, setTab] = useState<"rainfall" | "reservoir">("rainfall")
+  const [talukas, setTalukas] = useState<any>(null)
+  const [reservoirPoints, setReservoirPoints] = useState<any>(null)
+  const [status, setStatus] = useState<any>(null)
+
+  useEffect(() => {
+    getJSON("/gujarat_tehsil.geojson").then(setTalukas).catch(console.error)
+    getJSON("/Reservoir_ID_Location.geojson").then(setReservoirPoints).catch(console.error)
+    getJSON("/api/status").then(setStatus).catch(() => {})
+  }, [])
+
+  const updated = tab === "rainfall" ? status?.rainfall?.latest : status?.reservoir?.latest
+
+  return (
+    <div className="mx-auto max-w-[1400px] px-4 py-6 sm:px-6 sm:py-8">
+      <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Gujarat monsoon monitor</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Taluka rainfall and reservoir storage from official state reports, updated daily.
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          {updated && (
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
+              Latest report {prettyDate(updated)}
+            </span>
+          )}
+          <Segmented
+            value={tab}
+            onChange={setTab}
+            options={[
+              { value: "rainfall", label: "Rainfall" },
+              { value: "reservoir", label: "Reservoirs" },
+            ]}
+          />
+        </div>
+      </div>
+
+      {tab === "rainfall" ? <RainfallView geojson={talukas} /> : reservoirPoints && <ReservoirView points={reservoirPoints} boundary={talukas} />}
+
+      <p className="mt-8 text-xs text-muted-foreground">
+        Sources: State Emergency Operation Centre, Gujarat (taluka rainfall) · Narmada, Water Resources, Water Supply &amp;
+        Kalpsar Department (dam storage). Rainfall intensity classes follow IMD.
+      </p>
+    </div>
+  )
+}

@@ -105,6 +105,12 @@ class FixedRainfallParser:
             r'^\s*([A-Za-z\s\(\)-]+?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s*$'
         )
         
+        # Unanchored record pattern: some pages are laid out in more columns than
+        # the left/right split handles, so one text line can hold 2+ records.
+        self.record_iter_pattern = re.compile(
+            r'(?:(?<=\s)|^)(\d+)\s+([A-Za-z][A-Za-z .()\-]*?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)(?=\s|$)'
+        )
+
         # Pattern for district averages
         self.dist_avg_pattern = re.compile(
             r'^\s*Dist\.\s*Avg\.\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s+(\d+(?:\.\d+)?)\s*$'
@@ -198,11 +204,16 @@ class FixedRainfallParser:
             for i, page in enumerate(pdf.pages):
                 # More precise column separation
                 page_width = page.width
-                middle_point = page_width / 2
+                # Split at the second table's "Sr." header when present; the
+                # columns aren't always equal width, and a midpoint split can cut
+                # numbers in half.
+                sr_x = sorted(w['x0'] for w in page.extract_words() if w['text'].lower().startswith('sr'))
+                right_starts = [x for x in sr_x if x > page_width * 0.3]
+                split = (right_starts[0] - 3) if right_starts else page_width / 2
                 
                 # Define bounding boxes with better margins
-                left_bbox = (0, 0, middle_point - 10, page.height)
-                right_bbox = (middle_point + 10, 0, page_width, page.height)
+                left_bbox = (0, 0, split, page.height)
+                right_bbox = (split, 0, page_width, page.height)
                 
                 left_text = page.within_bbox(left_bbox).extract_text()
                 right_text = page.within_bbox(right_bbox).extract_text()
@@ -233,7 +244,7 @@ class FixedRainfallParser:
             region_match = self.region_pattern.match(line)
             if region_match:
                 region_name = region_match.group(1)
-                current_region = self.region_mappings.get(region_name, region_name)
+                current_region = self.region_mappings.get(region_name.upper(), region_name)
                 current_district = "Unknown"
                 continue
                 
@@ -284,6 +295,27 @@ class FixedRainfallParser:
                 })
                 continue
                 
+            # Lines holding several records side by side
+            multi = [m for m in self.record_iter_pattern.finditer(line)
+                     if 'avg' not in m.group(2).lower()]
+            if len(multi) > 1 or (len(multi) == 1 and not self.data_pattern_with_srno.match(line)):
+                for m in multi:
+                    groups = m.groups()
+                    taluka_name = self._normalize_name(groups[1])
+                    district = self._get_district_for_taluka(taluka_name, current_region)
+                    parsed_data.append({
+                        "region": current_region,
+                        "district": district if district != "Unknown" else current_district,
+                        "sr_no": float(groups[0]),
+                        "taluka": taluka_name,
+                        "avg_rain_1995_2024": float(groups[2]),
+                        "rain_till_yesterday": float(groups[3]),
+                        "rain_last_24hrs": float(groups[4]),
+                        "total_rainfall": float(groups[5]),
+                        "percent_against_avg": float(groups[6]),
+                    })
+                continue
+
             # Check for data with serial number
             data_with_srno_match = self.data_pattern_with_srno.match(line)
             if data_with_srno_match:
@@ -382,6 +414,17 @@ class FixedRainfallParser:
                 if correct_district != "Unknown":
                     df.at[idx, 'district'] = correct_district
         
+        # Region follows from district (column order in the PDF can mislead the
+        # running region context)
+        region_of = {
+            'Kachchh': 'Kachchh',
+            **{d: 'North Gujarat' for d in ['Patan', 'Banaskantha', 'Mahesana', 'Sabarkantha', 'Aravalli', 'Gandhinagar']},
+            **{d: 'East Central Gujarat' for d in ['Ahmedabad', 'Anand', 'Kheda', 'Panchmahal', 'Dahod', 'Vadodara', 'Chhota Udepur', 'Mahisagar']},
+            **{d: 'Saurashtra' for d in ['Rajkot', 'Jamnagar', 'Porbandar', 'Junagadh', 'Amreli', 'Bhavnagar', 'Botad', 'Gir Somnath', 'Devbhumi Dwarka', 'Morbi', 'Surendranagar']},
+            **{d: 'South Gujarat' for d in ['Surat', 'Bharuch', 'Narmada', 'Navsari', 'Valsad', 'Tapi', 'Dang']},
+        }
+        df['region'] = [region_of.get(d, r) for d, r in zip(df['district'], df['region'])]
+
         # Remove rows where essential data is missing
         df = df.dropna(subset=['taluka', 'total_rainfall'])
         

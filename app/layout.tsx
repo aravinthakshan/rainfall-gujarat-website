@@ -8,64 +8,38 @@ import { TopNavigation } from "@/components/top-nav"
 
 const geist = Geist({ subsets: ["latin"] })
 
+const title = "Gujarat Monsoon Monitor · Water & Climate Lab, IIT Gandhinagar"
+const description =
+  "Taluka-level rainfall and dam storage across Gujarat, updated daily from official state reports. Interactive maps and history charts."
+
+// Icons come from app/icon.png, app/apple-icon.png and app/favicon.ico
 export const metadata: Metadata = {
-  title: "RainInsight - Water & Climate Lab",
-  description: "Advanced rainfall monitoring and analytics platform for Gujarat. Interactive maps, real-time data visualization, and comprehensive rainfall analysis tools.",
-  keywords: ["rainfall", "climate", "monitoring", "analytics", "Gujarat", "weather", "data visualization", "maps"],
-  authors: [{ name: "Water & Climate Lab" }],
-  creator: "Water & Climate Lab",
-  publisher: "Water & Climate Lab",
-  formatDetection: {
-    email: false,
-    address: false,
-    telephone: false,
-  },
-  metadataBase: new URL('https://rainfall-gujarat-website.vercel.app'), // Replace with your actual domain
-  alternates: {
-    canonical: '/',
-  },
-  icons: {
-    icon: '/favicon.svg',
-    shortcut: '/favicon.svg',
-    apple: '/favicon.svg',
-  },
+  metadataBase: new URL("https://rainfall-gujarat-website.vercel.app"),
+  title,
+  description,
+  keywords: ["Gujarat rainfall", "taluka rainfall", "monsoon", "dam storage", "reservoir levels", "SEOC", "IIT Gandhinagar"],
+  authors: [{ name: "Water & Climate Lab, IIT Gandhinagar" }],
   openGraph: {
-    type: 'website',
-    locale: 'en_US',
-    url: 'https://rainfall-gujarat-website.vercel.app', // Replace with your actual domain
-    title: 'RainInsight - Advanced Rainfall Analytics Platform',
-    description: 'Interactive rainfall monitoring and analytics platform for Gujarat. Explore real-time data, interactive maps, and comprehensive rainfall analysis tools.',
-    siteName: 'RainInsight',
+    type: "website",
+    locale: "en_IN",
+    url: "/",
+    siteName: "Gujarat Monsoon Monitor",
+    title,
+    description,
     images: [
       {
-        url: '/preview.png', // Updated to use PNG preview image
+        url: "/og.png",
         width: 1200,
         height: 630,
-        alt: 'RainInsight - Rainfall Analytics Platform',
+        alt: "Map of Gujarat talukas shaded by 2025 season rainfall, with the title Gujarat Monsoon Monitor",
       },
     ],
   },
   twitter: {
-    card: 'summary_large_image',
-    title: 'RainInsight - Advanced Rainfall Analytics Platform',
-    description: 'Interactive rainfall monitoring and analytics platform for Gujarat. Explore real-time data, interactive maps, and comprehensive rainfall analysis tools.',
-    images: ['/preview.png'], // Updated to use PNG preview image
-    creator: '@yourtwitterhandle', // Replace with your Twitter handle if you have one
-    site: '@yourtwitterhandle', // Replace with your Twitter handle if you have one
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: {
-      index: true,
-      follow: true,
-      'max-video-preview': -1,
-      'max-image-preview': 'large',
-      'max-snippet': -1,
-    },
-  },
-  verification: {
-    google: 'your-google-verification-code', // Optional: Add if you have Google Search Console verification
+    card: "summary_large_image",
+    title,
+    description,
+    images: ["/og.png"],
   },
 }
 

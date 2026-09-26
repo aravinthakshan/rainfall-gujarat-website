@@ -41,6 +41,13 @@ from parser import FixedRainfallParser  # noqa: E402
 
 log = logging.getLogger("ingest")
 
+# CI runners (GitHub Actions) have no IPv6 route, and some government hosts
+# advertise AAAA records, so connect over IPv4 only.
+import socket  # noqa: E402
+import urllib3.util.connection as _urllib3_conn  # noqa: E402
+
+_urllib3_conn.allowed_gai_family = lambda: socket.AF_INET
+
 DB_NAME = "rainfall-data"
 RAINFALL_COLLECTION = "rainfalldatas"
 RESERVOIR_COLLECTION = "reservoirdatas"

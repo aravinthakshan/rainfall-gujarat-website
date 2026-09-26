@@ -11,14 +11,51 @@ Stack: Next.js 16 (App Router), React 19, Tailwind, Leaflet, Recharts, MongoDB. 
 
 ## Data pipeline
 
-Both sources publish one PDF per day. `python-scripts/ingest.py` downloads them, parses them and upserts into MongoDB.
+```
+GitHub Actions cron (10:00, 16:00, 22:00 IST)
+  └─ python-scripts/ingest.py --fill-gaps
+       1. download  rainfall PDF  (GSDMA → fallback gujaratweather.com)
+                    dam PDF       (wrd-dam.gujarat.gov.in)
+       2. parse     ~268 taluka rows + 206 dam rows per day
+       3. save      MongoDB Atlas, database `rainfall-data` (replaces that date's rows)
+Vercel (Next.js)
+  └─ /api/* routes read MongoDB on every request → /maps
+```
 
-| Data | Publisher | URL pattern |
-|---|---|---|
-| Taluka rainfall | State Emergency Operation Centre (SEOC), archived by GSDMA; gujaratweather.com mirror as fallback | listed per year via `POST https://gsdma.org/GetFileData.aspx/GetColumnChartData {"Type":"2","Year":YYYY}` (archive from 2015) |
-| Dam storage | Narmada, Water Resources, Water Supply & Kalpsar Dept. | `https://wrd-dam.gujarat.gov.in/downloads/home_pdf.php?dt=<base64 of YYYY-MM-DD>` |
+Nothing is redeployed when new data arrives: the site reads MongoDB live.
 
-Collections in the `rainfall-data` database:
+### Where the data comes from
+
+**1. Taluka rainfall: SEOC 24-hour rainfall report**
+
+Published daily during the monsoon (roughly June–November) by the State Emergency Operation Centre, Gujarat. One PDF per day lists every taluka's 30-year average, rain until yesterday, rain in the last 24 hours, season total and % of average.
+
+The script tries these in order:
+
+| # | Source | How it's fetched | Coverage |
+|---|---|---|---|
+| 1 | **GSDMA archive** (Gujarat State Disaster Management Authority, official). Human page: https://gsdma.org/rainfalldata-2?Type=2 | The calendar on that page is backed by a JSON API: `POST https://gsdma.org/GetFileData.aspx/GetColumnChartData` with body `{"Type":"2","Year":2026}` returns `[{Date: "MM/DD/YYYY", PDFName: <url>}]` for the whole year. The script fetches this list once per year and downloads the PDF for each date. | 2015 → today. Usually posted the same morning. |
+| 2 | **gujaratweather.com mirror** (third-party blog that re-posts the same SEOC PDF). Human page: https://www.gujaratweather.com/?page_id=14577 | Direct URL: `https://www.gujaratweather.com/wp-content/uploads/YYYY/MM/24-HRS-RAINFALL-DATA-DT.DD.MM.YYYY.pdf` (the month folder can be the next month for reports posted on the 1st, so both are tried). | Recent weeks only; old files get deleted. |
+
+The two sources produce identical data (checked on 24/09/2026: 268 talukas, 0 differences).
+
+Quirks handled in code:
+- `www.gsdma.org` serves a self-signed certificate, so links are rewritten to `https://gsdma.org`.
+- Some GSDMA files are named `ilovepdfmerged….pdf` rather than by date. The date comes from the API, not the filename.
+- The Directorate of Relief page (https://directorateofrelief.gujarat.gov.in/daily-rainfall-data) is the older official location, but it hasn't been updated since July 2023, so it isn't used.
+
+**2. Dam storage: daily dam report**
+
+Published every day of the year by the Narmada, Water Resources, Water Supply & Kalpsar Department (Reservoir Data Management System, https://wrd-dam.gujarat.gov.in/).
+
+- URL: `https://wrd-dam.gujarat.gov.in/downloads/home_pdf.php?dt=<base64 of YYYY-MM-DD>`. For example, `dt=MjAyNi0wOS0yNg==` is 2026-09-26.
+- Coverage: 2019 → today.
+- The server takes about 60 s per PDF, which is why backfills use `--workers`.
+- The script parses the "Statement showing the details of dams in Gujarat" pages: 206 dams, with district, taluka, gate type, levels, design/present storage, % filling, warning level, inflow and outflow.
+
+### Storage
+
+MongoDB Atlas (free M0 cluster, AWS Mumbai), database `rainfall-data`:
 
 - `rainfalldatas`: one row per taluka per day, with `date` as `DD/MM/YYYY`
 - `reservoirdatas`: one row per dam per day
@@ -26,13 +63,21 @@ Collections in the `rainfall-data` database:
 
 Writes replace all rows for a date, so re-running a date is always safe. A date is only written if the PDF parsed into a plausible number of rows (≥200 talukas or ≥150 dams), so a bad download never wipes good data.
 
+Atlas **Network Access** must allow `0.0.0.0/0`, because Vercel and GitHub Actions connect from changing IPs. The database user and password still protect access.
+
 ### Automatic daily updates
 
-`.github/workflows/daily-ingest.yml` runs at 10:00, 16:00 and 22:00 IST and re-processes the last 3 days, which picks up reports published late.
+`.github/workflows/daily-ingest.yml` runs at 10:00, 16:00 and 22:00 IST. Each run:
+1. re-processes the last 3 days, which picks up reports published late, and
+2. with `--fill-gaps`, retries any rainfall day GSDMA lists (this year and last) that's missing from the database.
 
-One-time setup: add a repository secret **`MONGODB_URI`** (Settings → Secrets and variables → Actions).
+The downloaded PDFs are kept as a run artifact for 14 days.
 
-To backfill or re-run by hand, go to **Actions → Daily data ingest → Run workflow**, and optionally enter a start/end date.
+`MONGODB_URI` must be set in two places:
+- GitHub → Settings → Secrets and variables → Actions → `MONGODB_URI` (for the cron)
+- Vercel → Project → Settings → Environment Variables → `MONGODB_URI` (for the site; redeploy after changing it)
+
+To backfill or re-run by hand, go to **Actions → Daily data ingest → Run workflow**, and optionally enter a start/end date. If a run fails (for example because a source changed its URLs), GitHub emails the repo owner, and the site keeps serving the last good data.
 
 ### Running the ingest locally
 

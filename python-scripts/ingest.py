@@ -16,6 +16,7 @@ Usage
   python python-scripts/ingest.py --date 2026-09-24
   python python-scripts/ingest.py --start 2026-06-01 --end 2026-09-25
   python python-scripts/ingest.py --months 3 --workers 6  # backfill ~3 months
+  python python-scripts/ingest.py --fill-gaps           # also retry GSDMA-listed days missing from the DB
   python python-scripts/ingest.py --days 7 --dry-run    # parse only, no DB writes
   python python-scripts/ingest.py --pdf report.pdf --kind rainfall --date 2026-09-24
 
@@ -249,6 +250,8 @@ def main():
     ap.add_argument("--workers", type=int, default=1, help="dates fetched/parsed in parallel (default 1)")
     ap.add_argument("--kind", choices=["rainfall", "reservoir", "both"], default="both")
     ap.add_argument("--pdf", help="parse a local PDF instead of downloading (needs --date and --kind)")
+    ap.add_argument("--fill-gaps", action="store_true",
+                    help="also retry rainfall days GSDMA lists (this year and last) that are missing from the DB")
     ap.add_argument("--dry-run", action="store_true", help="parse only, don't write to MongoDB")
     ap.add_argument("--workdir", default=os.environ.get("INGEST_WORKDIR", "/tmp/rain-ingest"))
     args = ap.parse_args()
@@ -305,6 +308,19 @@ def main():
             results = list(pool.map(lambda d: run_for_date(d, db, workdir, kinds, min_rows), dates))
     else:
         results = [run_for_date(d, db, workdir, kinds, min_rows) for d in dates]
+
+    if args.fill_gaps and db is not None:
+        have = set(db[RAINFALL_COLLECTION].distinct("date"))
+        done = {r["date"] for r in results if r.get("rainfall")}
+        gaps = sorted(
+            d
+            for y in (today.year - 1, today.year)
+            for d in (datetime.strptime(k, "%m/%d/%Y").date() for k in gsdma_index(y))
+            if d <= today and d.strftime("%d/%m/%Y") not in have | done
+        )
+        log.info("== filling %d rainfall gap(s)", len(gaps))
+        for d in gaps:
+            results.append(run_for_date(d, db, workdir, {"rainfall"}, min_rows))
 
     if db is not None:
         db[RUNS_COLLECTION].insert_one({

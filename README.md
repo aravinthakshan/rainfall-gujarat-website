@@ -15,7 +15,7 @@ Stack: Next.js 16 (App Router), React 19, Tailwind, Leaflet, Recharts, MongoDB. 
 GitHub Actions cron (10:00, 16:00, 22:00 IST)
   └─ python-scripts/ingest.py --fill-gaps
        1. download  rainfall PDF  (GSDMA → fallback gujaratweather.com)
-                    dam PDF       (wrd-dam.gujarat.gov.in)
+                    dam PDF       (gujaratweather.com mirror → fallback wrd-dam.gujarat.gov.in)
        2. parse     ~268 taluka rows + 206 dam rows per day
        3. save      MongoDB Atlas, database `rainfall-data` (replaces that date's rows)
 Vercel (Next.js)
@@ -48,9 +48,21 @@ Quirks handled in code:
 
 Published every day of the year by the Narmada, Water Resources, Water Supply & Kalpsar Department (Reservoir Data Management System, https://wrd-dam.gujarat.gov.in/).
 
-- URL: `https://wrd-dam.gujarat.gov.in/downloads/home_pdf.php?dt=<base64 of YYYY-MM-DD>`. For example, `dt=MjAyNi0wOS0yNg==` is 2026-09-26.
-- Coverage: 2019 → today.
-- The server takes about 60 s per PDF, which is why backfills use `--workers`.
+The script tries these in order:
+
+| # | Source | URL | Coverage |
+|---|---|---|---|
+| 1 | **gujaratweather.com mirror** (re-posts the same PDF; human page https://www.gujaratweather.com/?page_id=14688) | `https://www.gujaratweather.com/wp-content/uploads/YYYY/MM/report_DD-MM-YYYY.pdf` | Latest day only |
+| 2 | **Official portal** | `https://wrd-dam.gujarat.gov.in/downloads/home_pdf.php?dt=<base64 of YYYY-MM-DD>` (e.g. `dt=MjAyNi0wOS0yNg==` is 2026-09-26) | 2019 → today |
+
+The two produce identical data (checked on 25/09/2026: 206 dams, 0 differences).
+
+**The official portal blocks cloud servers.** It drops connections from outside India *and* from cloud datacenters inside India: GitHub Actions and Vercel's Mumbai region both time out. It only answers normal Indian connections such as a home or campus network. So:
+- The **daily cron** gets dams from the mirror. The cron runs 3× a day, well within the mirror's one-day window, and `--fill-gaps` retries any dam day missing in the last 14 days.
+- **Backfills of older dates** must be run from a machine in India (e.g. your laptop) with `ingest.py --kind reservoir --start …`.
+
+Other details:
+- The portal is slow (about 60 s per PDF), which is why backfills use `--workers`.
 - The script parses the "Statement showing the details of dams in Gujarat" pages: 206 dams, with district, taluka, gate type, levels, design/present storage, % filling, warning level, inflow and outflow.
 
 ### Storage
@@ -69,7 +81,7 @@ Atlas **Network Access** must allow `0.0.0.0/0`, because Vercel and GitHub Actio
 
 `.github/workflows/daily-ingest.yml` runs at 10:00, 16:00 and 22:00 IST. Each run:
 1. re-processes the last 3 days, which picks up reports published late, and
-2. with `--fill-gaps`, retries any rainfall day GSDMA lists (this year and last) that's missing from the database.
+2. with `--fill-gaps`, retries any rainfall day GSDMA lists (this year and last) and any dam day from the last 14 days that's missing from the database.
 
 The downloaded PDFs are kept as a run artifact for 14 days.
 
@@ -88,7 +100,7 @@ export MONGODB_URI="mongodb+srv://..."          # or mongodb://127.0.0.1:27017/
 .venv/bin/python python-scripts/ingest.py                         # last 3 days
 .venv/bin/python python-scripts/ingest.py --months 3 --workers 6  # backfill ~3 months (~30 min)
 .venv/bin/python python-scripts/ingest.py --start 2025-06-01 --end 2025-10-31 --workers 6
-.venv/bin/python python-scripts/ingest.py --fill-gaps               # retry days GSDMA lists but the DB lacks
+.venv/bin/python python-scripts/ingest.py --fill-gaps               # retry missing GSDMA rainfall days + recent dam days
 .venv/bin/python python-scripts/ingest.py --days 7 --dry-run      # parse only, no DB
 .venv/bin/python python-scripts/ingest.py --pdf report.pdf --kind rainfall --date 2026-09-24
 ```
@@ -117,7 +129,7 @@ Missing rainfall days:
 
 Rainfall reports are only published during the monsoon (roughly June–November), so there's no rainfall data outside those months by design.
 
-**Dams:** every day from 26 Sep 2024 onwards. The report is published daily all year.
+**Dams:** every day from 26 Sep 2024 onwards (729 days, 206 dams each), except **26 Sep 2025** and **26 Feb 2026**, when the portal returns an empty file (no report was published).
 
 **Recovering the 2026 gap:**
 
@@ -140,6 +152,8 @@ npm install
 echo 'MONGODB_URI=mongodb://127.0.0.1:27017/rainfall-data' > .env.local
 npm run dev
 ```
+
+Server functions run in Vercel's Mumbai region (`vercel.json`), next to the Atlas cluster.
 
 Environment variables (set in Vercel):
 

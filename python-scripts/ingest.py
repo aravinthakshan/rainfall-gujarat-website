@@ -9,7 +9,9 @@ Sources
     fallback: gujaratweather.com mirror (keeps only recent days)
     https://www.gujaratweather.com/wp-content/uploads/YYYY/MM/24-HRS-RAINFALL-DATA-DT.DD.MM.YYYY.pdf
   Reservoir (N.W.R.W.S. & Kalpsar Dept daily dam report)
-    https://wrd-dam.gujarat.gov.in/downloads/home_pdf.php?dt=<base64 YYYY-MM-DD>
+    mirror:   https://www.gujaratweather.com/wp-content/uploads/YYYY/MM/report_DD-MM-YYYY.pdf (latest day only)
+    official: https://wrd-dam.gujarat.gov.in/downloads/home_pdf.php?dt=<base64 YYYY-MM-DD>
+              (full archive, but blocks cloud/foreign IPs)
 
 Usage
   python python-scripts/ingest.py                       # last 3 days (idempotent)
@@ -104,12 +106,14 @@ def reservoir_url(d: date):
 
 
 def reservoir_urls(d: date):
-    """The dam portal only answers requests from India. When DAM_PROXY_URL is
-    set (GitHub Actions), fetch through the site's /api/dam-pdf route, which
-    runs in Vercel's Mumbai region; the portal itself is the fallback."""
-    proxy = os.environ.get("DAM_PROXY_URL")
-    if proxy:
-        yield f"{proxy.rstrip('/')}/api/dam-pdf?date={d.isoformat()}"
+    """The dam portal only answers normal Indian connections; it drops cloud
+    and foreign IPs, so GitHub Actions can't reach it. gujaratweather.com
+    re-posts the same PDF (verified identical) but keeps only the latest day,
+    so try the mirror first and fall back to the portal (which has the full
+    archive, reachable from a machine in India)."""
+    stamp = d.strftime("%d-%m-%Y")
+    for ym in sorted({d.strftime("%Y/%m"), (d + timedelta(days=1)).strftime("%Y/%m")}):
+        yield f"https://www.gujaratweather.com/wp-content/uploads/{ym}/report_{stamp}.pdf"
     yield reservoir_url(d)
 
 
@@ -268,7 +272,7 @@ def main():
     ap.add_argument("--kind", choices=["rainfall", "reservoir", "both"], default="both")
     ap.add_argument("--pdf", help="parse a local PDF instead of downloading (needs --date and --kind)")
     ap.add_argument("--fill-gaps", action="store_true",
-                    help="also retry rainfall days GSDMA lists (this year and last) that are missing from the DB")
+                    help="also retry rainfall days GSDMA lists (this year and last) and dam days from the last 14 days that are missing from the DB")
     ap.add_argument("--dry-run", action="store_true", help="parse only, don't write to MongoDB")
     ap.add_argument("--workdir", default=os.environ.get("INGEST_WORKDIR", "/tmp/rain-ingest"))
     args = ap.parse_args()
@@ -338,6 +342,19 @@ def main():
         log.info("== filling %d rainfall gap(s)", len(gaps))
         for d in gaps:
             results.append(run_for_date(d, db, workdir, {"rainfall"}, min_rows))
+
+        # Dam reports are daily; retry any missing in the last 14 days (the
+        # mirror only keeps the latest day, so a missed run leaves a hole).
+        have_res = set(db[RESERVOIR_COLLECTION].distinct("date"))
+        done_res = {r["date"] for r in results if r.get("reservoir")}
+        res_gaps = [
+            today - timedelta(days=i)
+            for i in range(14, 0, -1)
+            if (today - timedelta(days=i)).strftime("%d/%m/%Y") not in have_res | done_res
+        ]
+        log.info("== filling %d dam gap(s)", len(res_gaps))
+        for d in res_gaps:
+            results.append(run_for_date(d, db, workdir, {"reservoir"}, min_rows))
 
     if db is not None:
         db[RUNS_COLLECTION].insert_one({

@@ -46,8 +46,6 @@ jobs:
       - name: Ingest
         env:
           MONGODB_URI: ${{ secrets.MONGODB_URI }}
-          # dam portal blocks non-Indian IPs; fetch via the site's Mumbai function
-          DAM_PROXY_URL: https://rainfall-gujarat-website.vercel.app
           START: ${{ inputs.start }}
           END: ${{ inputs.end }}
           KIND: ${{ inputs.kind || 'both' }}

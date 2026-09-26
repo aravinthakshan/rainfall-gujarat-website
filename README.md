@@ -95,11 +95,36 @@ export MONGODB_URI="mongodb+srv://..."          # or mongodb://127.0.0.1:27017/
 
 The dam portal takes about 60 s per PDF, so use `--workers` for backfills. GSDMA's rainfall archive goes back to 2015, and the dam portal's to 2019, so older seasons can be backfilled with `--start`. Rainfall reports only exist for the monsoon season (roughly June–November).
 
-### Known gaps
+### Data coverage (as of 26 Sep 2026)
 
-- **Rainfall, 2 Jun – 6 Sep 2026:** GSDMA lists these reports, but its server returns `401 Access denied` for the files (checked 26 Sep 2026), and no other archive has them. Every run uses `--fill-gaps` to retry GSDMA-listed days that are missing from the database, so they fill in automatically if GSDMA fixes access. The gujaratweather.com mirror covers some recent days in the meantime.
-- **Rainfall, 28 Sep 2024, 6 Jun 2025 and 4 Nov 2025:** on these days GSDMA only has the short "descending" report, which lists only talukas that received rain and has no season totals. They're skipped rather than loaded as partial days.
-- Rainfall reports are only published during the monsoon (roughly June–November). Dam reports are published daily all year.
+The database was backfilled from 26 Sep 2024.
+
+**Rainfall** (compared with the days GSDMA published):
+
+| Season | Published by GSDMA | In database |
+|---|---|---|
+| 2024 | 26 Sep – 29 Nov (start of backfill range) | complete except 28 Sep |
+| 2025 | 2 Jun – 30 Nov | complete except 6 Jun, 4 Nov |
+| 2026 | 2 Jun – 25 Sep | 1 – 3 Sep and 7 – 25 Sep only; **2 Jun – 31 Aug and 4 – 6 Sep missing** |
+
+Missing rainfall days:
+
+| Missing | Days | Why |
+|---|---|---|
+| **2 Jun – 31 Aug 2026** | **91** | GSDMA lists these reports, but its server returns `401 Access denied` for the files, and the gujaratweather.com mirror has already deleted them. No other archive (including the Wayback Machine) has copies. |
+| 4 – 6 Sep 2026 | 3 | Same cause |
+| 28 Sep 2024, 6 Jun 2025, 4 Nov 2025 | 1 each | GSDMA only has the short "descending" report for these days, which lists only talukas that got rain and has no season totals. Skipped on purpose, because loading them would show every other taluka as zero. |
+
+Rainfall reports are only published during the monsoon (roughly June–November), so there's no rainfall data outside those months by design.
+
+**Dams:** every day from 26 Sep 2024 onwards. The report is published daily all year.
+
+**Recovering the 2026 gap:**
+
+1. **Automatic:** every scheduled run uses `--fill-gaps`, which retries GSDMA-listed days missing from the database. The gap fills itself if GSDMA fixes access to those files.
+2. **Ask GSDMA** to fix the file permissions on `https://gsdma.org/uploads/Rainfall/` (contact on their site: ceo-gsdma@gujarat.gov.in, 079-23259276).
+3. **Load saved copies:** if anyone kept the daily PDFs, load each one with
+   `python python-scripts/ingest.py --pdf <file> --kind rainfall --date YYYY-MM-DD`.
 
 ### Parser notes
 

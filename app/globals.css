@@ -87,6 +87,12 @@
   * {
     @apply border-border;
   }
+  /* No rubber-band bounce when pulling past the top/bottom of the page, so
+     the sticky header stays put (macOS trackpads, iOS Safari) */
+  html,
+  body {
+    overscroll-behavior-y: none;
+  }
   body {
     @apply bg-background text-foreground;
   }

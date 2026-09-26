@@ -50,7 +50,7 @@ jobs:
           END: ${{ inputs.end }}
           KIND: ${{ inputs.kind || 'both' }}
         run: |
-          args="--kind $KIND"
+          args="--kind $KIND --fill-gaps"
           if [ -n "$START" ]; then args="$args --start $START"; fi
           if [ -n "$END" ]; then args="$args --end $END"; fi
           python python-scripts/ingest.py $args --workdir "$RUNNER_TEMP/pdfs"

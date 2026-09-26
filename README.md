@@ -43,11 +43,18 @@ export MONGODB_URI="mongodb+srv://..."          # or mongodb://127.0.0.1:27017/
 .venv/bin/python python-scripts/ingest.py                         # last 3 days
 .venv/bin/python python-scripts/ingest.py --months 3 --workers 6  # backfill ~3 months (~30 min)
 .venv/bin/python python-scripts/ingest.py --start 2025-06-01 --end 2025-10-31 --workers 6
+.venv/bin/python python-scripts/ingest.py --fill-gaps               # retry days GSDMA lists but the DB lacks
 .venv/bin/python python-scripts/ingest.py --days 7 --dry-run      # parse only, no DB
 .venv/bin/python python-scripts/ingest.py --pdf report.pdf --kind rainfall --date 2026-09-24
 ```
 
 The dam portal takes about 60 s per PDF, so use `--workers` for backfills. GSDMA's rainfall archive goes back to 2015, and the dam portal's to 2019, so older seasons can be backfilled with `--start`. Rainfall reports only exist for the monsoon season (roughly June–November).
+
+### Known gaps
+
+- **Rainfall, 2 Jun – 6 Sep 2026:** GSDMA lists these reports, but its server returns `401 Access denied` for the files (checked 26 Sep 2026), and no other archive has them. Every run uses `--fill-gaps` to retry GSDMA-listed days that are missing from the database, so they fill in automatically if GSDMA fixes access. The gujaratweather.com mirror covers some recent days in the meantime.
+- **Rainfall, 28 Sep 2024, 6 Jun 2025 and 4 Nov 2025:** on these days GSDMA only has the short "descending" report, which lists only talukas that received rain and has no season totals. They're skipped rather than loaded as partial days.
+- Rainfall reports are only published during the monsoon (roughly June–November). Dam reports are published daily all year.
 
 ### Parser notes
 

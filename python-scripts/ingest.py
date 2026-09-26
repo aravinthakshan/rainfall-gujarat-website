@@ -3,7 +3,10 @@ Daily ingest: download the Gujarat rainfall + reservoir PDFs, parse them and
 upsert into MongoDB. Replaces the manual admin upload / Render microservice.
 
 Sources
-  Rainfall  (SEOC 24-hr taluka report, mirrored by gujaratweather.com)
+  Rainfall  (SEOC 24-hr taluka report)
+    primary:  GSDMA archive, listed per year by
+              POST https://gsdma.org/GetFileData.aspx/GetColumnChartData {"Type":"2","Year":YYYY}
+    fallback: gujaratweather.com mirror (keeps only recent days)
     https://www.gujaratweather.com/wp-content/uploads/YYYY/MM/24-HRS-RAINFALL-DATA-DT.DD.MM.YYYY.pdf
   Reservoir (N.W.R.W.S. & Kalpsar Dept daily dam report)
     https://wrd-dam.gujarat.gov.in/downloads/home_pdf.php?dt=<base64 YYYY-MM-DD>
@@ -25,6 +28,7 @@ import logging
 import os
 import re
 import sys
+import threading
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
 
@@ -47,7 +51,37 @@ HEADERS = {"User-Agent": "Mozilla/5.0 (RainInsight ingest; IIT Gandhinagar Water
 # --------------------------------------------------------------------------- #
 # Download
 # --------------------------------------------------------------------------- #
+_gsdma_cache: dict[int, dict[str, str]] = {}
+_gsdma_lock = threading.Lock()
+
+
+def gsdma_index(year: int) -> dict[str, str]:
+    """{'MM/DD/YYYY': pdf_url} for every rainfall report GSDMA has for a year."""
+    with _gsdma_lock:
+        if year not in _gsdma_cache:
+            try:
+                r = requests.post(
+                    "https://gsdma.org/GetFileData.aspx/GetColumnChartData",
+                    json={"Type": "2", "Year": year},
+                    headers=HEADERS,
+                    timeout=60,
+                )
+                r.raise_for_status()
+                # www.gsdma.org serves a self-signed certificate; the bare domain is valid
+                _gsdma_cache[year] = {
+                    row["Date"]: row["PDFName"].replace("http://www.gsdma.org", "https://gsdma.org")
+                    for row in r.json()["d"]
+                }
+            except (requests.RequestException, ValueError, KeyError) as e:
+                log.warning("  GSDMA index %s unavailable: %s", year, e)
+                return {}  # not cached, so a later call retries
+        return _gsdma_cache[year]
+
+
 def rainfall_urls(d: date):
+    official = gsdma_index(d.year).get(d.strftime("%m/%d/%Y"))
+    if official:
+        yield official
     stamp = d.strftime("%d.%m.%Y")
     # Posts are uploaded under the month they were published, which is usually
     # the report's month but can roll over on the 1st.

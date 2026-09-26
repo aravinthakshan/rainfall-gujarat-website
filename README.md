@@ -15,7 +15,7 @@ Both sources publish one PDF per day. `python-scripts/ingest.py` downloads them,
 
 | Data | Publisher | URL pattern |
 |---|---|---|
-| Taluka rainfall | State Emergency Operation Centre (SEOC), mirrored by gujaratweather.com | `https://www.gujaratweather.com/wp-content/uploads/YYYY/MM/24-HRS-RAINFALL-DATA-DT.DD.MM.YYYY.pdf` |
+| Taluka rainfall | State Emergency Operation Centre (SEOC), archived by GSDMA; gujaratweather.com mirror as fallback | listed per year via `POST https://gsdma.org/GetFileData.aspx/GetColumnChartData {"Type":"2","Year":YYYY}` (archive from 2015) |
 | Dam storage | Narmada, Water Resources, Water Supply & Kalpsar Dept. | `https://wrd-dam.gujarat.gov.in/downloads/home_pdf.php?dt=<base64 of YYYY-MM-DD>` |
 
 Collections in the `rainfall-data` database:
@@ -47,7 +47,7 @@ export MONGODB_URI="mongodb+srv://..."          # or mongodb://127.0.0.1:27017/
 .venv/bin/python python-scripts/ingest.py --pdf report.pdf --kind rainfall --date 2026-09-24
 ```
 
-The dam portal takes about 60 s per PDF, so use `--workers` for backfills.
+The dam portal takes about 60 s per PDF, so use `--workers` for backfills. GSDMA's rainfall archive goes back to 2015, and the dam portal's to 2019, so older seasons can be backfilled with `--start`. Rainfall reports only exist for the monsoon season (roughly June–November).
 
 ### Parser notes
 

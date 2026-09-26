@@ -42,6 +42,14 @@ type Props = {
 }
 
 const AXIS = { fontSize: 11, fill: "hsl(var(--muted-foreground))" }
+// Compact axis numbers: 950, 2,800, 12k, 1.2M
+function axisNumber(v: number) {
+  const a = Math.abs(v)
+  if (a >= 1e6) return `${+(v / 1e6).toFixed(1)}M`
+  if (a >= 1e4) return `${+(v / 1e3).toFixed(0)}k`
+  return fmt(v)
+}
+
 const PRESETS = [
   { label: "7D", days: 7 },
   { label: "30D", days: 30 },
@@ -58,6 +66,12 @@ export default function SeriesChart({ data: raw, kind, unit, selectedDate, onSel
     const end = Math.max(0, data.length - 1)
     setRange({ start: Math.max(0, end - 29), end })
     setPreset(30)
+  }, [data])
+
+  // Size the Y axis to its widest label instead of a fixed width
+  const yWidth = useMemo(() => {
+    const max = Math.max(0, ...data.map((p) => p.value ?? 0))
+    return 14 + axisNumber(max * 1.1).length * 7
   }, [data])
 
   const visible = useMemo(() => data.slice(range.start, range.end + 1), [data, range])
@@ -86,7 +100,7 @@ export default function SeriesChart({ data: raw, kind, unit, selectedDate, onSel
 
   const common = {
     data,
-    margin: { top: 8, right: 8, bottom: 0, left: -8 },
+    margin: { top: 8, right: 8, bottom: 0, left: 0 },
     onClick: (e: any) => {
       const d = e?.activePayload?.[0]?.payload?.date ?? (e?.activeLabel as string | undefined)
       if (d && onSelectDate) onSelectDate(d)
@@ -98,7 +112,7 @@ export default function SeriesChart({ data: raw, kind, unit, selectedDate, onSel
       <Bar dataKey="value" fill="hsl(var(--primary))" radius={[3, 3, 0, 0]} maxBarSize={18} isAnimationActive={false} />
     ) : (
       <Area
-        type="monotone"
+        type="linear"
         dataKey="value"
         stroke="hsl(var(--primary))"
         strokeWidth={2}
@@ -143,11 +157,10 @@ export default function SeriesChart({ data: raw, kind, unit, selectedDate, onSel
         tick={AXIS}
         tickLine={false}
         axisLine={false}
-        width={52}
-        tickFormatter={(v) => fmt(v)}
+        width={yWidth}
+        tickFormatter={axisNumber}
         domain={[0, "auto"]}
         allowDataOverflow
-        label={{ value: unit, angle: -90, position: "insideLeft", offset: 16, style: { ...AXIS, textAnchor: "middle" } }}
       />
       <Tooltip
         cursor={kind === "bar" ? { fill: "hsl(var(--muted))" } : { stroke: "hsl(var(--muted-foreground))", strokeDasharray: "3 3" }}
@@ -216,6 +229,7 @@ export default function SeriesChart({ data: raw, kind, unit, selectedDate, onSel
           </div>
         )}
       </div>
+      <div className="mb-1 text-[11px] text-muted-foreground">{unit}</div>
       <div style={{ height: height + (data.length > 7 ? 44 : 0) }} className={onSelectDate ? "cursor-pointer" : undefined}>
         <ResponsiveContainer width="100%" height="100%">
           {kind === "bar" ? (
